@@ -5,7 +5,7 @@ define("YAML\\SOH", '---');
 define("YAML\\ETB", '---');
 define("YAML\\EOT", '...');
 
-From::_('YAML', $plug = function(string $value, string $dent = '  ', $docs = false, $eval = true) {
+From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = false, $eval = true) {
     /*
     if (extension_loaded('yaml')) {
         $value = explode("\n...\n", $value, 2);
@@ -248,7 +248,7 @@ From::_('YAML', $plug = function(string $value, string $dent = '  ', $docs = fal
     return $docs ? $yaml_docs($value, $dent, $eval, true === $docs ? "\t" : $docs) : $yaml($value, $dent, $eval);
 });
 
-To::_('YAML', $plug = function(array $value, string $dent = '  ', $docs = false) {
+To::_('YAML', $to = function(array $value, string $dent = '  ', $docs = false) {
     /*
     if (extension_loaded('yaml')) {}
     */
@@ -320,5 +320,5 @@ To::_('YAML', $plug = function(array $value, string $dent = '  ', $docs = false)
 });
 
 // Alias
-From::_('yaml', $plug);
-To::_('yaml', $plug);
+From::_('yaml', $from);
+To::_('yaml', $to);
