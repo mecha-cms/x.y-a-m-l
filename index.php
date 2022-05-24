@@ -271,7 +271,7 @@ To::_('YAML', $to = function(array $value, string $dent = '  ', $docs = false) {
         };
         $yaml_set = static function(string $k, string $m, $v) {
             // Check for safe key pattern, otherwise, wrap it with quote
-            if ("" !== $k && (is_numeric($k) || (ctype_alnum($k) && !is_numeric($k[0])) || preg_match('/^[a-z][a-z\d]*(?:[_-]+[a-z\d]+)*$/i', $k))) {
+            if ("" !== $k && (is_numeric($k) || ((function_exists('ctype_alnum') && ctype_alnum($k) || preg_match('/^[[:alnum:]]+$/', $k)) && !is_numeric($k[0])) || preg_match('/^[a-z][a-z\d]*(?:[_-]+[a-z\d]+)*$/i', $k))) {
             } else {
                 $k = "'" . strtr($k, ["'" => "\\\'"]) . "'";
             }
