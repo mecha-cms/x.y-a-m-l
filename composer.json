@@ -1,8 +1,5 @@
 {
   "description": "Simple YAML parser.",
   "license": "GPL-3.0-or-later",
-  "name": "mecha-cms/x.y-a-m-l",
-  "require": {
-    "mecha-cms/mecha": "*"
-  }
+  "name": "mecha-cms/x.y-a-m-l"
 }
