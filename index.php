@@ -280,7 +280,7 @@ To::_('YAML', $to = function(array $value, string $dent = '  ', $docs = false) {
         foreach ($data as $k => $v) {
             if (is_array($v)) {
                 // Sequence array?
-                if ((function_exists('array_is_list') && array_is_list($v)) || array_keys($v) === range(0, count($v) - 1)) {
+                if (array_is_list($v)) {
                     $out[] = $yaml_set($k, ":\n", $yaml_list($v));
                 } else {
                     $out[] = $yaml_set($k, ":\n", $dent . strtr($yaml($v, $dent), ["\n" => "\n" . $dent]));
