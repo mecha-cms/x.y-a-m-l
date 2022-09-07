@@ -5,7 +5,7 @@ define("YAML\\SOH", '---');
 define("YAML\\ETB", '---');
 define("YAML\\EOT", '...');
 
-From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = false, $eval = true) {
+From::_('YAML', $from = function (string $value, string $dent = '  ', $docs = false, $eval = true) {
     /*
     if (extension_loaded('yaml')) {
         $value = explode("\n...\n", $value, 2);
@@ -16,9 +16,9 @@ From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = fal
         return $docs ? $out : ($out[0] ?? []);
     }
     */
-    $yaml = static function(string $value, string $dent = '  ', $eval = true) use(&$yaml) {
+    $yaml = static function (string $value, string $dent = '  ', $eval = true) use (&$yaml) {
         // Break into structure(s)
-        $yaml_select = static function(string $value) {
+        $yaml_select = static function (string $value) {
             $out = [];
             $s = $n = null;
             foreach (explode("\n", $value) as $v) {
@@ -38,9 +38,9 @@ From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = fal
             $out[] = rtrim($s);
             return $out;
         };
-        $yaml_set = static function(&$out, string $value, string $dent, $eval) use(&$yaml) {
+        $yaml_set = static function (&$out, string $value, string $dent, $eval) use (&$yaml) {
             // Folded-style string
-            $yaml_block = static function(string $value) {
+            $yaml_block = static function (string $value) {
                 $out = "";
                 $e = false; // Previous is empty
                 $x = false; // Has back-slash at the end of string
@@ -68,7 +68,7 @@ From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = fal
                 }
                 return trim($out);
             };
-            $yaml_eval = static function($value) use(&$yaml_eval) {
+            $yaml_eval = static function ($value) use (&$yaml_eval) {
                 if (is_array($value)) {
                     foreach ($value as &$v) {
                         $v = $yaml_eval($v);
@@ -85,7 +85,7 @@ From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = fal
                 return e($value, ['~' => null]);
             };
             // Get key and value pair(s)
-            $yaml_break = static function(string $value) use(&$yaml_eval) {
+            $yaml_break = static function (string $value) use (&$yaml_eval) {
                 $value = trim($value, "\n");
                 if (0 === strpos($value, '"') || 0 === strpos($value, "'")) {
                     $q = $value[0];
@@ -114,7 +114,7 @@ From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = fal
                 $out = strstr($value, '#', true);
                 return [false, false, trim(false !== $out ? $out : $value)];
             };
-            $yaml_list = static function(string $value, string $dent, $eval) use(&$yaml, &$yaml_break, &$yaml_eval, &$yaml_pull, &$yaml_value) {
+            $yaml_list = static function (string $value, string $dent, $eval) use (&$yaml, &$yaml_break, &$yaml_eval, &$yaml_pull, &$yaml_value) {
                 $out = [];
                 $value = $yaml_pull($value, '  ' /* hard-coded */);
                 foreach (explode("\n- ", substr($value, 2)) as $v) {
@@ -130,14 +130,14 @@ From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = fal
                 return $out;
             };
             // Dedent from `$dent`
-            $yaml_pull = static function(string $value, string $dent) {
+            $yaml_pull = static function (string $value, string $dent) {
                 if (0 === strpos($value, $dent)) {
                     return strtr(substr($value, strlen($dent)), ["\n" . $dent => "\n"]);
                 }
                 return $value;
             };
             // Parse flow-style collection(s)
-            $yaml_span = static function(string $value, $eval) use(&$yaml_eval) {
+            $yaml_span = static function (string $value, $eval) use (&$yaml_eval) {
                 $out = "";
                 // Validate to JSON
                 foreach (preg_split('/\s*("(?:[^"\\\]|\\\.)*"|\'(?:[^\'\\\]|\\\.)*\'|[\[\]\{\}:,])\s*/', $value, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY) as $v) {
@@ -147,7 +147,7 @@ From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = fal
                 return $eval ? $yaml_eval($out) : $out;
             };
             // Remove comment(s)
-            $yaml_value = static function(string $value) {
+            $yaml_value = static function (string $value) {
                 $value = trim($value);
                 if (0 === strpos($value, '"') || 0 === strpos($value, "'")) {
                     $q = $value[0];
@@ -223,7 +223,7 @@ From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = fal
         }
         return $out;
     };
-    $yaml_docs = static function(string $value, string $dent = '  ', $eval = true, $content = "\t") use(&$yaml) {
+    $yaml_docs = static function (string $value, string $dent = '  ', $eval = true, $content = "\t") use (&$yaml) {
         $docs = [];
         // Normalize line-break
         $value = trim(n($value));
@@ -248,13 +248,13 @@ From::_('YAML', $from = function(string $value, string $dent = '  ', $docs = fal
     return $docs ? $yaml_docs($value, $dent, $eval, true === $docs ? "\t" : $docs) : $yaml($value, $dent, $eval);
 });
 
-To::_('YAML', $to = function(array $value, string $dent = '  ', $docs = false) {
+To::_('YAML', $to = function (array $value, string $dent = '  ', $docs = false) {
     /*
     if (extension_loaded('yaml')) {}
     */
-    $yaml = static function(array $data, string $dent = '  ') use(&$yaml) {
+    $yaml = static function (array $data, string $dent = '  ') use (&$yaml) {
         $out = [];
-        $yaml_list = static function(array $data) use(&$dent, &$yaml) {
+        $yaml_list = static function (array $data) use (&$dent, &$yaml) {
             $out = [];
             foreach ($data as $v) {
                 if (is_array($v)) {
@@ -269,7 +269,7 @@ To::_('YAML', $to = function(array $value, string $dent = '  ', $docs = false) {
             }
             return implode("\n", $out);
         };
-        $yaml_set = static function(string $k, string $m, $v) {
+        $yaml_set = static function (string $k, string $m, $v) {
             // Check for safe key pattern, otherwise, wrap it with quote
             if ("" !== $k && (is_numeric($k) || ((function_exists('ctype_alnum') && ctype_alnum($k) || preg_match('/^[[:alnum:]]+$/', $k)) && !is_numeric($k[0])) || preg_match('/^[a-z][a-z\d]*(?:[_-]+[a-z\d]+)*$/i', $k))) {
             } else {
@@ -303,7 +303,7 @@ To::_('YAML', $to = function(array $value, string $dent = '  ', $docs = false) {
         }
         return implode("\n", $out);
     };
-    $yaml_docs = static function(array $data, string $dent = '  ', $content = "\t") use(&$yaml) {
+    $yaml_docs = static function (array $data, string $dent = '  ', $content = "\t") use (&$yaml) {
         $out = $c = "";
         if (array_key_exists($content, $data)) {
             $c = $data[$content] ?? "";
