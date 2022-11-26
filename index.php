@@ -5,7 +5,7 @@ define("YAML\\SOH", '---');
 define("YAML\\ETB", '---');
 define("YAML\\EOT", '...');
 
-From::_('YAML', $from = function (string $value, string $dent = '  ', $docs = false, $eval = true) {
+From::_('YAML', $from = static function (?string $value, string $dent = '  ', $docs = false, $eval = true) {
     /*
     if (extension_loaded('yaml')) {
         $value = explode("\n...\n", $value, 2);
@@ -119,7 +119,7 @@ From::_('YAML', $from = function (string $value, string $dent = '  ', $docs = fa
                 $value = $yaml_pull($value, '  ' /* hard-coded */);
                 foreach (explode("\n- ", substr($value, 2)) as $v) {
                     $v = strtr($v, ["\n  " => "\n"]);
-                    list($k, $m) = $yaml_break($v);
+                    [$k, $m] = $yaml_break($v);
                     if (false === $m) {
                         $v = $yaml_value($v);
                         $out[] = $eval ? $yaml_eval($v) : $v;
@@ -158,7 +158,7 @@ From::_('YAML', $from = function (string $value, string $dent = '  ', $docs = fa
                 $out = strstr($value, '#', true);
                 return trim(false !== $out ? $out : $value);
             };
-            list($k, $m, $v) = $yaml_break($value);
+            [$k, $m, $v] = $yaml_break($value);
             if (false === $k && false === $m && "" !== $v) {
                 if (
                     '[' === $v[0] && ']' === substr($v, -1) ||
@@ -214,7 +214,7 @@ From::_('YAML', $from = function (string $value, string $dent = '  ', $docs = fa
         };
         $out = [];
         // Normalize line-break
-        $value = trim(n($value));
+        $value = trim(n($value) ?? "");
         if ("" === $value) {
             return $out; // Empty array
         }
@@ -248,7 +248,7 @@ From::_('YAML', $from = function (string $value, string $dent = '  ', $docs = fa
     return $docs ? $yaml_docs($value, $dent, $eval, true === $docs ? "\t" : $docs) : $yaml($value, $dent, $eval);
 });
 
-To::_('YAML', $to = function (array $value, string $dent = '  ', $docs = false) {
+To::_('YAML', $to = static function (array $value, string $dent = '  ', $docs = false) {
     /*
     if (extension_loaded('yaml')) {}
     */
