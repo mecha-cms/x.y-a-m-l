@@ -5,7 +5,10 @@ define("YAML\\SOH", '---');
 define("YAML\\ETB", '---');
 define("YAML\\EOT", '...');
 
-From::_('YAML', $from = static function (?string $value, string $dent = '  ', $docs = false, $eval = true) {
+From::_('YAML', $from = static function (?string $value, string $dent = '  ', $docs = false, $eval = true): array {
+    if (!$value) {
+        return [];
+    }
     /*
     if (extension_loaded('yaml')) {
         $value = explode("\n...\n", $value, 2);
@@ -248,7 +251,10 @@ From::_('YAML', $from = static function (?string $value, string $dent = '  ', $d
     return $docs ? $yaml_docs($value, $dent, $eval, true === $docs ? "\t" : $docs) : $yaml($value, $dent, $eval);
 });
 
-To::_('YAML', $to = static function (array $value, string $dent = '  ', $docs = false) {
+To::_('YAML', $to = static function (?array $value, string $dent = '  ', $docs = false): ?string {
+    if (!$value) {
+        return null;
+    }
     /*
     if (extension_loaded('yaml')) {}
     */
@@ -316,7 +322,8 @@ To::_('YAML', $to = static function (array $value, string $dent = '  ', $docs = 
         $c = trim($c, "\n");
         return $out . YAML\EOT . ($c ? "\n\n" . $c : "");
     };
-    return $docs ? $yaml_docs($value, $dent, true === $docs ? "\t" : $docs) : $yaml($value, $dent);
+    $out = $docs ? $yaml_docs($value, $dent, true === $docs ? "\t" : $docs) : $yaml($value, $dent);
+    return "" !== $out ? $out : null;
 });
 
 // Alias
