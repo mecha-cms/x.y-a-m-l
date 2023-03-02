@@ -178,13 +178,13 @@ From::_('YAML', $from = static function (?string $value, string $dent = '  ', $d
             $vv = $yaml_pull($v, $dent);
             // Get first token
             $t = substr(trim($vv), 0, 1);
-            // A literal-style or folded-style scalar value
-            if ('|' === $t || '>' === $t) {
-                $vv = $yaml_pull(ltrim(substr(ltrim($vv), 1), "\n"), $dent);
+            // A fold-style or literal-style scalar value
+            if ('>' === $t || '|' === $t) {
+                $vv = $yaml_pull(ltrim(preg_replace('/^([+-])?[ \t]*#[^\n]*/', '$1', substr(ltrim($vv), 1)), "\n"), $dent);
                 if ("+\n" === substr($vv, 0, 2) || "-\n" === substr($vv, 0, 2)) {
-                    $out[$k] = '>' === $t ? $yaml_block(substr($vv, 2), $vv[0], $dent) : $vv;
+                    $out[$k] = '>' === $t ? $yaml_block(substr($vv, 2), $vv[0], $dent) : $yaml_pull(substr($vv, 2), $dent) . ('-' === $vv[0] ? "" : "\n");
                 } else {
-                    $out[$k] = '>' === $t ? $yaml_block($vv) : $vv;
+                    $out[$k] = '>' === $t ? $yaml_block($vv) : $yaml_pull($vv, $dent) . "\n";
                 }
             // Maybe a YAML collection(s)
             } else if (":\n" === $m) {
