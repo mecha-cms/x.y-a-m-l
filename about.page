@@ -8,7 +8,8 @@ type: Markdown
 version: 2.0.3
 ...
 
-Convert YAML string input into array output and array input into YAML string output. This extension is very simple and does not support complex YAML format. Only suitable for use on static data that does not contain comments, references and variables.
+Convert YAML string to array and array to YAML string. This extension is very simple and does not support complex YAML
+format. Only suitable for use on static data that does not contain comments, references and variables.
 
 ### Usage
 
@@ -23,9 +24,9 @@ c:
 h: 1
 i: [j, k, l]
 m:
-  - n
-  - o
-  - p
+- n
+- o
+- p
 YAML;
 
 echo From::YAML($content)['c']['d'];

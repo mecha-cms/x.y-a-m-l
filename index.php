@@ -43,16 +43,20 @@ From::_('YAML', $from = static function (?string $value, string $dent = '  ', $d
         };
         $yaml_set = static function (&$out, string $value, string $dent, $eval) use (&$yaml) {
             // Folded-style string
-            $yaml_block = static function (string $value) {
+            $yaml_block = static function (string $value, $chomp = "", string $dent = "") {
                 $out = "";
                 $e = false; // Previous is empty
                 $x = false; // Has back-slash at the end of string
                 foreach (explode("\n", $value) as $k => $v) {
-                    $t = trim($v);
+                    $t = substr($v, strlen($dent));
                     if ("" === $t) {
                         $out .= "\n";
                     } else if (!$e && !$x) {
-                        $out .= ' ';
+                        if ($t && false !== strpos(" \t", $t[0])) {
+                            $t = "\n" . $t . "\n";
+                        } else if ("\n" !== substr($out, -1)) {
+                            $out .= ' ';
+                        }
                     }
                     if ("" !== $t && "\\" === substr($t, -1)) {
                         $out .= ltrim(substr($v, 0, -1));
@@ -69,7 +73,7 @@ From::_('YAML', $from = static function (?string $value, string $dent = '  ', $d
                         $e = $x = false;
                     }
                 }
-                return trim($out);
+                return '+' === $chomp ? ltrim($out) : (trim($out) . ('-' === $chomp ? "" : "\n"));
             };
             $yaml_eval = static function ($value) use (&$yaml_eval) {
                 if (is_array($value)) {
@@ -177,7 +181,11 @@ From::_('YAML', $from = static function (?string $value, string $dent = '  ', $d
             // A literal-style or folded-style scalar value
             if ('|' === $t || '>' === $t) {
                 $vv = $yaml_pull(ltrim(substr(ltrim($vv), 1), "\n"), $dent);
-                $out[$k] = '>' === $t ? $yaml_block($vv) : $vv;
+                if ("+\n" === substr($vv, 0, 2) || "-\n" === substr($vv, 0, 2)) {
+                    $out[$k] = '>' === $t ? $yaml_block(substr($vv, 2), $vv[0], $dent) : $vv;
+                } else {
+                    $out[$k] = '>' === $t ? $yaml_block($vv) : $vv;
+                }
             // Maybe a YAML collection(s)
             } else if (":\n" === $m) {
                 // Sequence
@@ -293,13 +301,13 @@ To::_('YAML', $to = static function (?array $value, string $dent = '  ', $docs =
                 }
             } else {
                 if (is_string($v)) {
-                    if (false !== strpos($v, "\n")) {
-                        $v = "|\n" . $dent . strtr($v, [
+                    if (false !== strpos($v, "\n") || false !== strpos($v, "\t")) {
+                        $v = '|' . ("\n" === substr($v, -1) ? "" : '-') . "\n" . $dent . strtr($v, [
                             "\n" => "\n" . $dent,
                             "\n" . $dent . "\n" => "\n\n"
                         ]);
                     } else if (strlen($v) > 120) {
-                        $v = ">\n" . $dent . wordwrap($v, 120, "\n" . $dent);
+                        $v = '>' . ("\n" === substr($v, -1) ? "" : '-') . "\n" . $dent . wordwrap($v, 120, "\n" . $dent);
                     } else if (is_numeric($v) || $v !== strtr($v, "!#%&*,-:<=>?@[\\]{|}", '-------------------')) {
                         $v = "'" . $v . "'";
                     }
