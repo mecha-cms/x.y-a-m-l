@@ -1,0 +1,20 @@
+{
+  "a1": "asdf",
+  "a2": "asdf asdf\nasdf asdf",
+  "a3": {
+    "a31": "asdf",
+    "a32": "asdf",
+    "a33": "asdf"
+  },
+  "a4": ["asdf", {"a41": "asdf"}, "asdf"],
+  "a5": ["asdf", {"a51": "asdf", "a52": "asdf"}, "asdf"],
+  "a6": [1, 2, true, ""],
+  "a7": [1, 2, true, "", {"a71": 1}],
+  "a8": {
+    "a81": 1
+  },
+  "a9": {
+    "a91": 1,
+    "a92": 2
+  }
+}

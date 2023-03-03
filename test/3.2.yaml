@@ -1,0 +1,9 @@
+a1: asdf
+a2: asdf
+a3: asdf
+---
+a4: asdf
+a5: asdf
+a6: asdf
+
+# missing the first document separator

@@ -1,0 +1,84 @@
+a0: a
+a1: 1
+a2: 1.5
+a3: false
+a31: FALSE
+a311: False
+a312: falsE
+a313: fAlse
+a32: 'false'
+a33: "false"
+a34: 'FALSE'
+a35: "FALSE"
+a4: null
+a41: NULL
+a411: Null
+a412: nulL
+a413: nUll
+a42: ~
+a43: 'null'
+a44: "null"
+a45: 'NULL'
+a46: "NULL"
+a47: '~'
+a48: "~"
+a5: true
+a51: TRUE
+a511: True
+a512: truE
+a513: tRue
+a52: 'true'
+a53: "true"
+a54: 'TRUE'
+a55: "TRUE"
+
+a6: []
+a61: [] # asdf
+a62: [ a, 1, true ]
+a63: [ a, 1, true ] # asdf
+a64: [
+  a,
+  1,
+  true
+]
+a65: [ # asdf
+  a,
+  1, # asdf
+  true
+] # asdf
+a7: {}
+a71: {} # asdf
+a72: { a: 1, b: true, c: [ 1, 2, 3 ] }
+a73: { a: 1, b: true, c: [ 1, 2, 3 ] } # asdf
+a74: {
+  a: 1,
+  b: true,
+  c: [
+    1,
+    2,
+    3
+  ]
+}
+a75: { # asdf
+  a: 1,
+  b: true, # asdf
+  c: [
+    1,
+    2,
+    3 # asdf
+  ]
+} # asdf
+a8: ''
+a9: ""
+a10:
+
+a11: 'asdf\'asdf"asdf'
+a12: "asdf\"asdf'asdf"
+
+a13:asdf: asdf
+a14: asdf: asdf
+a141: asdf: asdf # asdf
+a15:
+  asdf: asdf
+a151: # asdf
+  asdf: asdf # asdf

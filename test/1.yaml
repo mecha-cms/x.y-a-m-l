@@ -1,0 +1,67 @@
+a1: >
+  asdf asdf asdf
+  asdf asdf asdf
+    asdf asdf asdf
+  asdf asdf asdf
+
+  asdf asdf asdf
+  # asdf asdf asdf
+  asdf asdf asdf
+
+
+a2: |
+  asdf asdf asdf
+  asdf asdf asdf
+    asdf asdf asdf
+  asdf asdf asdf
+
+  asdf asdf asdf
+  # asdf asdf asdf
+  asdf asdf asdf
+
+
+a11: >-
+  asdf asdf asdf
+  asdf asdf asdf
+    asdf asdf asdf
+  asdf asdf asdf
+
+  asdf asdf asdf
+  # asdf asdf asdf
+  asdf asdf asdf
+
+
+a21: |-
+  asdf asdf asdf
+  asdf asdf asdf
+    asdf asdf asdf
+  asdf asdf asdf
+
+  asdf asdf asdf
+  # asdf asdf asdf
+  asdf asdf asdf
+
+
+a12: >+
+  asdf asdf asdf
+  asdf asdf asdf
+    asdf asdf asdf
+  asdf asdf asdf
+
+  asdf asdf asdf
+  # asdf asdf asdf
+  asdf asdf asdf
+
+
+a22: |+
+  asdf asdf asdf
+  asdf asdf asdf
+    asdf asdf asdf
+  asdf asdf asdf
+
+  asdf asdf asdf
+  # asdf asdf asdf
+  asdf asdf asdf
+
+
+a23: asdf
