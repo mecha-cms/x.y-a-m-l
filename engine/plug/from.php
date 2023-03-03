@@ -13,13 +13,19 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
         return (object) [];
     }
     // Document separator
-    if (\YAML\SOH === \trim(\strtok($v, "\n#"))) {
+    $v = \substr(\strtr("\n" . $v, [
+        "\n" . \YAML\ETB . "\n" => "\n" . \YAML\ETB . ' ',
+        "\n" . \YAML\ETB . "\t" => "\n" . \YAML\ETB . ' ',
+        "\n" . \YAML\SOH . "\n" => "\n" . \YAML\SOH . ' ',
+        "\n" . \YAML\SOH . "\t" => "\n" . \YAML\SOH . ' '
+    ]), 1);
+    if (\YAML\SOH === \trim(\strtok($v, ' '))) {
         $out = [];
         // Skip any string after `...`
         [$a, $b] = \array_replace(["", null], \explode("\n" . \YAML\EOT . "\n", $v, 2));
         // Remove the first document separator
-        $a = \substr($a, (\strpos($a, '#') || \strpos($a, "\n")) + \strlen(\YAML\SOH));
-        foreach (\explode("\n" . \YAML\ETB . "\n", $a . "\n") as $vv) {
+        $a = \substr($a, \strpos(\ltrim($a), ' ') + 1);
+        foreach (\explode("\n" . \YAML\ETB . ' ', $a . ' ') as $vv) {
             $out[] = from($vv, $dent, false, $eval);
         }
         // Take the rest of the YAML stream just in case you will need it!
@@ -128,7 +134,7 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
             continue;
         }
         $c = \substr(\trim(\strtok($v, '#')), -3);
-        if (': [' === $c || ': {' === $c) {
+        if (': [' === $c || ': {' === $c || \preg_match('/^:[ \t][\[{]$/', $c)) {
             $chops[$k++] .= $v;
             continue;
         }
