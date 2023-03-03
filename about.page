@@ -9,7 +9,7 @@ version: 2.0.3
 ...
 
 Convert YAML string to array and array to YAML string. This extension is very simple and does not support complex YAML
-format. Only suitable for use on static data that does not contain comments, references and variables.
+format. Only suitable for use on static data that does not contain references and variables.
 
 ### Usage
 
@@ -17,33 +17,32 @@ Convert YAML string to array:
 
 ~~~ .php
 $content = <<<YAML
-a: b
-c:
-  d: e
-  f: g
-h: 1
-i: [j, k, l]
-m:
-- n
-- o
-- p
+key_1: value 1
+key_2: value 2
+key_3:
+  key_3_1: value 3.1
+  key_3_2: value 3.2
+  key_3_3: value 3.3
+key_4: |
+  asdf asdf asdf
+  asdf asdf asdf
 YAML;
 
-echo From::YAML($content)['c']['d'];
+echo From::YAML($content)->key_3->key_3_3;
 ~~~
 
 Convert array to YAML string:
 
 ~~~ .php
 $data = [
-    'a' => 'b',
-    'c' => [
-        'd' => 'e',
-        'f' => 'g'
+    'key_1' => 'value 1',
+    'key_2' => 'value 2',
+    'key_3' => [
+        'key_3_1' => 'value 3.1',
+        'key_3_2' => 'value 3.2',
+        'key_3_3' => 'value 3.3'
     ],
-    'h' => 1,
-    'i' => ['j', 'k', 'l'],
-    'm' => ['n', 'o', 'p']
+    'key_4' => "asdf asdf asdf\nasdf asdf asdf\n"
 ];
 
 echo To::YAML($data);
