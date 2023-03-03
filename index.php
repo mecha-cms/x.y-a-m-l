@@ -203,7 +203,13 @@ namespace x\y_a_m_l {
             }
             return false !== \strpos($value, "\\") || \preg_match('/[\n\r\t]/', $value) ? \json_encode($value) : $value;
         }
-        if (\is_array($value)) {
+        if (\is_array($value) || \is_object($value)) {
+            if (\is_object($value)) {
+                if (0 === \q($value)) {
+                    return '{}';
+                }
+                $value = (array) $value;
+            }
             $out = [];
             if ($content && \array_key_exists($content, $value)) {
                 $body = $value[$content];
@@ -220,6 +226,9 @@ namespace x\y_a_m_l {
                 }
             }
             if (\array_is_list($value)) {
+                if (!$value) {
+                    return '[]'; // Empty array
+                }
                 // Prefer flow-style value?
                 $flow = \count($value) < 7 && \all($value, function ($v) {
                     if (\is_string($v)) {
@@ -235,7 +244,14 @@ namespace x\y_a_m_l {
                     return \substr($out, 0, -2) . ' ]';
                 }
                 foreach ($value as $k => $v) {
-                    if (\is_array($v)) {
+                    if (\is_array($v) || \is_object($v)) {
+                        if (\is_object($v)) {
+                            if (0 === \q($v)) {
+                                $out[] = '- {}'; // Empty object
+                                continue;
+                            }
+                            $v = (array) $v;
+                        }
                         $out[] = '- ' . \strtr(to($v, $dent, $content, $eval), ["\n" => "\n" . $dent]);
                         continue;
                     }
@@ -269,8 +285,19 @@ namespace x\y_a_m_l {
                         $k = "'" . \strtr($k, ["'" => "\\'"]) . "'";
                     }
                 }
-                if (\is_array($v)) {
+                if (\is_array($v) || \is_object($v)) {
+                    if (\is_object($v)) {
+                        if (0 === \q($v)) {
+                            $out[] = $k . ': {}'; // Empty object
+                            continue;
+                        }
+                        $v = (array) $v;
+                    }
                     if (\array_is_list($v)) {
+                        if (!$v) {
+                            $out[] = $k . ': []'; // Empty array
+                            continue;
+                        }
                         // Prefer flow-style value?
                         $flow = \count($v) < 7 && \all($v, function ($v) {
                             if (\is_string($v)) {
@@ -307,7 +334,7 @@ namespace x\y_a_m_l {
             }
             return \implode("\n", $out);
         }
-        return null;
+        return null; // Error?
     }
     \From::_('YAML', __NAMESPACE__ . "\\from");
     \From::_('yaml', __NAMESPACE__ . "\\from"); // Alias
