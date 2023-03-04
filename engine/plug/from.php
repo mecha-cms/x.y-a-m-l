@@ -143,7 +143,7 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
             continue;
         }
         $c = \substr(\trim(\strtok($v, '#')), -3);
-        if (': [' === $c || ': {' === $c || \preg_match('/^:[ \t][\[{]$/', $c)) {
+        if (': [' === $c || ': {' === $c || \preg_match('/^:[ \t]+[\[{]$/', $c)) {
             $chops[$k++] .= $v;
             continue;
         }
