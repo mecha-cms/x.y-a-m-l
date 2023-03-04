@@ -20,8 +20,12 @@ function to($value, string $dent = '  ', $content = "\t"): ?string {
         // <https://yaml-multiline.info>
         if (false !== \strpos(\trim($value, "\n"), "\n")) {
             $chomp = "\n\n" === \substr($value, -2) ? '+' : ("\n" === \substr($value, -1) ? "" : '-');
-            $value = \strtr($value, ["\n" => "\n" . $dent]);
-            $value = \substr(\strtr($value . "\n", [$dent . "\n" => "\n"]), 0, -1);
+            $value = \strtr($value, [
+                "\n" => "\n" . $dent
+            ]);
+            $value = \substr(\strtr($value . "\n", [
+                $dent . "\n" => "\n"
+            ]), 0, -1);
             return '|' . $chomp . "\n" . $dent . ("\n" === \substr($value, -1) ? \substr($value, 0, -1) : $value);
         }
         if (\strlen(\trim($value, "\n")) > 120) {
@@ -32,7 +36,7 @@ function to($value, string $dent = '  ', $content = "\t"): ?string {
         if (\is_numeric($value) || $value !== \strtr($value, "!#%&*,-:<=>?@[\\]{|}", '-------------------')) {
             return "'" . $value . "'";
         }
-        return false !== \strpos($value, "\\") || \preg_match('/[\n\r\t]/', $value) ? \json_encode($value) : $value;
+        return false !== \strpos($value, "\\") || \preg_match('/[\n\r\t]/', $value) ? \json_encode($value, \JSON_UNESCAPED_SLASHES, 1) : $value;
     }
     if (\is_array($value) || \is_object($value)) {
         if (\is_object($value)) {
@@ -83,7 +87,9 @@ function to($value, string $dent = '  ', $content = "\t"): ?string {
                         }
                         $v = (array) $v;
                     }
-                    $out[] = '- ' . \strtr(to($v, $dent, false), ["\n" => "\n" . $dent]);
+                    $out[] = '- ' . \strtr(to($v, $dent, false), [
+                        "\n" => "\n" . $dent
+                    ]);
                     continue;
                 }
                 $out[] = '- ' . to($v, $dent, false);
@@ -109,11 +115,13 @@ function to($value, string $dent = '  ', $content = "\t"): ?string {
         }
         foreach ($value as $k => $v) {
             // Test for safe key pattern, otherwise, wrap it with quote!
-            if (\is_numeric($k) || \preg_match('/^[:\w-]+$/', $k)) {} else {
+            if (\is_numeric($k) || \preg_match('/^[:.\w-]+$/', $k)) {} else {
                 if (false === \strpos($k, '"') && false !== \strpos($k, "'")) {
                     $k = '"' . $k . '"';
                 } else {
-                    $k = "'" . \strtr($k, ["'" => "\\'"]) . "'";
+                    $k = "'" . \strtr($k, [
+                        "'" => "\\'"
+                    ]) . "'";
                 }
             }
             if (\is_array($v) || \is_object($v)) {
@@ -158,7 +166,9 @@ function to($value, string $dent = '  ', $content = "\t"): ?string {
                     $out[] = $k . ': ' . to($v, $dent, false);
                     continue;
                 }
-                $out[] = $k . ":\n" . $dent . \strtr(to($v, $dent, false), ["\n" => "\n" . $dent]);
+                $out[] = $k . ":\n" . $dent . \strtr(to($v, $dent, false), [
+                    "\n" => "\n" . $dent
+                ]);
                 continue;
             }
             $out[] = $k . ': ' . to($v, $dent, false);

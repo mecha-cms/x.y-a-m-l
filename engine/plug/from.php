@@ -55,18 +55,22 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
                     continue;
                 }
             }
-            $out .= false !== \strpos('[]{}:,', $v) ? $v : \json_encode($v);
+            $out .= false !== \strpos('[]{}:,', $v) ? $v : \json_encode($v, false, 1);
         }
         return \json_decode($out) ?? $value;
     }
     if ("'" === $v[0] && "'" === \substr($v, -1)) {
-        return \strtr(\substr($v, 1, -1), ["\\'" => "'"]);
+        return \strtr(\substr($v, 1, -1), [
+            "\\'" => "'"
+        ]);
     }
     if ('"' === $v[0] && '"' === \substr($v, -1)) {
         try {
-            $v = \json_decode($v, true);
+            $v = \json_decode($v, false, 1, \JSON_THROW_ON_ERROR);
         } catch (\Throwable $e) {
-            $v = \strtr(\substr($v, 1, -1), ['\\"' => '"']);
+            $v = \strtr(\substr($v, 1, -1), [
+                '\"' => '"'
+            ]);
         }
         return $v;
     }
@@ -90,10 +94,15 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
     // Fold-style or literal-style value
     if (false !== \strpos('>|', $value[0])) {
         [$k, $v] = \explode("\n", $value, 2);
-        $v = \substr(\strtr("\n" . $v, ["\n" . $dent => "\n"]), 1);
+        $v = \substr(\strtr("\n" . $v, [
+            "\n" . $dent => "\n"
+        ]), 1);
+        // <https://yaml-multiline.info>
         if ('>' === $k[0]) {
             $v = \preg_replace('/^[ \t]+[^\n]+$/m', ' $0' . "\n", $v);
-            $v = \strtr(\preg_replace('/\n(?!\s|$)/', ' ', $v), ["\n " => "\n"]);
+            $v = \strtr(\preg_replace('/\n(?!\s|$)/', ' ', $v), [
+                "\n " => "\n"
+            ]);
         }
         if ("" === ($chomp = $k[1] ?? "")) {
             return \rtrim($v) . "\n";
@@ -161,7 +170,7 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
             if (false !== \strpos('\'"', $v[0]) && \preg_match('/^(' . $str . ')\s*:\s*([\s\S]*)?$/', $v, $m)) {
                 $kk = \strtr(\substr($m[1], 1, -1), [
                     "\\'" => "'",
-                    "\\\"" => '"'
+                    '\"' => '"'
                 ]);
                 $vv = $m[2] ?? null;
             } else {
@@ -173,7 +182,9 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
                 }
             }
             if ($vv && 0 !== \strpos($vv, '- ') && 0 !== \strpos($vv, "-\n") && false === \strpos('>|', $vv[0])) {
-                $vv = \substr(\strtr("\n" . $vv, ["\n" . $dent => "\n"]), 1);
+                $vv = \substr(\strtr("\n" . $vv, [
+                    "\n" . $dent => "\n"
+                ]), 1);
             }
             $out[$kk] = from($vv, $dent, false, $eval);
         } else {}
