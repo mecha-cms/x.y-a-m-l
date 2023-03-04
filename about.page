@@ -8,8 +8,8 @@ type: Markdown
 version: 2.0.3
 ...
 
-Convert YAML string to array and array to YAML string. This extension is very simple and does not support complex YAML
-format. Only suitable for use on static data that does not contain references and variables.
+Convert YAML string to array/object and array/object to YAML string. This extension is very simple and does not support
+complex YAML format. Only suitable for use with static data that does not contain references and variables.
 
 ### Usage
 

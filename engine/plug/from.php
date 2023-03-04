@@ -24,7 +24,7 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
         // Skip any string after `...`
         [$a, $b] = \array_replace(["", null], \explode("\n" . \YAML\EOT . "\n", $v, 2));
         // Remove the first document separator
-        $a = \substr($a, \strpos(\ltrim($a), ' ') + 1);
+        $a = \substr($a, \strpos($a, ' ') + 1);
         foreach (\explode("\n" . \YAML\ETB . ' ', $a . ' ') as $vv) {
             $out[] = from($vv, $dent, false, $eval);
         }
