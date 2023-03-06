@@ -67,7 +67,7 @@ function to($value, string $dent = '  ', $content = "\t"): ?string {
             // Prefer flow-style value?
             $flow = \count($value) < 7 && \all($value, function ($v) {
                 if (\is_string($v)) {
-                    return "" === $v || \strlen($v) < 7 && \preg_match('/^[\w-]+$/', $v);
+                    return "" === $v || \strlen($v) < 7 && \preg_match('/^[:.\w-]+$/', $v);
                 }
                 return \is_float($v) || \is_int($v) || false === $v || null === $v || true === $v;
             });
@@ -98,11 +98,11 @@ function to($value, string $dent = '  ', $content = "\t"): ?string {
         }
         // Prefer flow-style value?
         $flow = \count($value) < 3 && \all($value, function ($v, $k) {
-            if (!\preg_match('/^[\w-]+$/', $k)) {
+            if (!\preg_match('/^[:.\w-]+$/', $k)) {
                 return false;
             }
             if (\is_string($v)) {
-                return "" === $v || \strlen($v) < 7 && \preg_match('/^[\w-]+$/', $v);
+                return "" === $v || \strlen($v) < 7 && \preg_match('/^[:.\w-]+$/', $v);
             }
             return \is_float($v) || \is_int($v) || false === $v || null === $v || true === $v;
         });
@@ -140,7 +140,7 @@ function to($value, string $dent = '  ', $content = "\t"): ?string {
                     // Prefer flow-style value?
                     $flow = \count($v) < 7 && \all($v, function ($v) {
                         if (\is_string($v)) {
-                            return "" === $v || \strlen($v) < 7 && \preg_match('/^[\w-]+$/', $v);
+                            return "" === $v || \strlen($v) < 7 && \preg_match('/^[:.\w-]+$/', $v);
                         }
                         return \is_float($v) || \is_int($v) || false === $v || null === $v || true === $v;
                     });
@@ -154,11 +154,11 @@ function to($value, string $dent = '  ', $content = "\t"): ?string {
                 }
                 // Prefer flow-style value?
                 $flow = \count($v) < 3 && \all($v, function ($v, $k) {
-                    if (!\preg_match('/^[\w-]+$/', $k)) {
+                    if (!\preg_match('/^[:.\w-]+$/', $k)) {
                         return false;
                     }
                     if (\is_string($v)) {
-                        return "" === $v || \strlen($v) < 7 && \preg_match('/^[\w-]+$/', $v);
+                        return "" === $v || \strlen($v) < 7 && \preg_match('/^[:.\w-]+$/', $v);
                     }
                     return \is_float($v) || \is_int($v) || false === $v || null === $v || true === $v;
                 });

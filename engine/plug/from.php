@@ -160,14 +160,14 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
         }
         if (false !== \strpos($v, '#')) {
             // Remove comment(s) except those in the string
-            $v = \preg_replace('/((?:' . $str . '|[^"\'\s:]+)\s*:(?:[ \t]+(?:' . $str . '|[>|][+-]?[\s\S]+))?)|((?:^|[ \t])#[^\n]+)/', '$1', $v);
+            $v = \preg_replace('/((?:' . $str . '|[^"\'\s:]+)\s*:(?:\s+(?:' . $str . '|[>|][+-]?[\s\S]+))?)|((?:^|\s+)#[^\n]+)/', '$1', $v);
             if ("" === $v) {
                 continue;
             }
         }
         if (false !== \strpos($v, ':')) {
             // Handle key that looks like a string
-            if (false !== \strpos('\'"', $v[0]) && \preg_match('/^(' . $str . ')\s*:\s*([\s\S]*)?$/', $v, $m)) {
+            if (false !== \strpos('\'"', $v[0]) && \preg_match('/^(' . $str . ')\s*:(\s+[\s\S]*)?$/', $v, $m)) {
                 $kk = \strtr(\substr($m[1], 1, -1), [
                     "\\'" => "'",
                     '\"' => '"'
