@@ -12,17 +12,17 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
     if ('{}' === $v) {
         return (object) [];
     }
-    // Document separator
-    $v = \substr(\strtr("\n" . $v, [
-        "\n" . \YAML\ETB . "\n" => "\n" . \YAML\ETB . ' ',
-        "\n" . \YAML\ETB . "\t" => "\n" . \YAML\ETB . ' ',
-        "\n" . \YAML\SOH . "\n" => "\n" . \YAML\SOH . ' ',
-        "\n" . \YAML\SOH . "\t" => "\n" . \YAML\SOH . ' '
-    ]), 1);
-    if (\YAML\SOH === \trim(\strtok($v, ' '))) {
+    if (\YAML\SOH === \trim(\strtok($v, " \n\t"))) {
         $out = [];
         // Skip any string after `...`
         [$a, $b] = \array_replace(["", null], \explode("\n" . \YAML\EOT . "\n", $v, 2));
+        // Normalize document separator
+        $a = \substr(\strtr("\n" . $a, [
+            "\n" . \YAML\ETB . "\n" => "\n" . \YAML\ETB . ' ',
+            "\n" . \YAML\ETB . "\t" => "\n" . \YAML\ETB . ' ',
+            "\n" . \YAML\SOH . "\n" => "\n" . \YAML\SOH . ' ',
+            "\n" . \YAML\SOH . "\t" => "\n" . \YAML\SOH . ' '
+        ]), 1);
         // Remove the first document separator
         $a = \substr($a, \strpos($a, ' ') + 1);
         foreach (\explode("\n" . \YAML\ETB . ' ', $a . ' ') as $vv) {
