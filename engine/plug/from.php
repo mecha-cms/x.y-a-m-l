@@ -14,8 +14,9 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
     }
     if (\YAML\SOH === \trim(\strtok($v, " \n\t"))) {
         $out = [];
+        $v = "---\nstatus: 1\n...\naa";
         // Skip any string after `...`
-        [$a, $b] = \array_replace(["", null], \explode("\n" . \YAML\EOT . "\n", $v, 2));
+        [$a, $b] = \array_replace(["", null], \explode("\n" . \YAML\EOT . "\n", $v . "\n", 2));
         // Normalize document separator
         $a = \substr(\strtr("\n" . $a, [
             "\n" . \YAML\ETB . "\n" => "\n" . \YAML\ETB . ' ',
@@ -35,7 +36,7 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
             // YAML key denoted by a human using a tab character.
             //
             // <https://yaml.org/spec/1.2/spec.html#id2777534>
-            $out[$content] = \ltrim($b, "\n");
+            $out[$content] = \ltrim(\substr($b, 0, -1), "\n");
         }
         return \array_is_list($out) ? $out : (object) $out;
     }
