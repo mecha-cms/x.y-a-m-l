@@ -14,7 +14,6 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
     }
     if (\YAML\SOH === \trim(\strtok($v, " \n\t"))) {
         $out = [];
-        $v = "---\nstatus: 1\n...\naa";
         // Skip any string after `...`
         [$a, $b] = \array_replace(["", null], \explode("\n" . \YAML\EOT . "\n", $v . "\n", 2));
         // Normalize document separator
