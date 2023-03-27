@@ -160,7 +160,8 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
         }
         if (false !== \strpos($v, '#')) {
             // Remove comment(s) except those in the string
-            $v = \preg_replace('/((?:' . $str . '|[^"\'\s:]+)\s*:(?:\s+(?:' . $str . '|[>|][+-]?[\s\S]+))?)|((?:^|\s+)#[^\n]+)/', '$1', $v);
+            $v = \preg_replace('/^((?:' . $str . '|[^"\'\s:]+)\s*:(?:\s+(?:' . $str . '|[>|][+-]?[\s\S]+))?)|((?:^|\s+)#[^\n]+)/', '$1', $v);
+            $v = \preg_replace('/^((?:' . $str . '|[^"\'\s:]+)\s*:[ \t]+[>|][+-]?)[ \t]+#[^\n]*/', '$1', $v);
             if ("" === $v) {
                 continue;
             }
@@ -174,12 +175,14 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
                 ]);
                 $vv = $m[2] ?? null;
             } else {
-                [$kk, $n, $vv] = \array_replace(["", "", ""], \preg_split('/[ \t]*:((?:[ \t][>|][+-]?|[ \n\t])\s*|$)/', $v, 2, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY));
+                [$kk, $n, $vv] = \array_replace(["", "", ""], \preg_split('/[ \t]*:([ \n\t]\s*|$)/', $v, 2, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY));
+                if ("" === $vv) {
+                    $out[$kk] = $vv;
+                    continue;
+                }
                 // Fix case for invalid key-value pair(s) such as `xxx: xxx: xxx` as it should be `xxx:\n  xxx: xxx`
-                if ($n && "\n" !== $n[0] && false !== \strpos($vv, ': ') && '[' !== $vv[0] && ']' !== \substr($vv, -1) && '{' !== $vv[0] && '}' !== \substr($vv, -1)) {
-                    $out[$kk] = \substr(\strtr("\n" . $vv, [
-                        "\n" . $dent => ' '
-                    ]), 1);
+                if ($n && "\n" !== $n[0] && false !== \strpos($vv, ': ') && '[' !== $vv[0] && ']' !== \substr($vv, -1) && '{' !== $vv[0] && '}' !== \substr($vv, -1) && false === \strpos('>|', $vv[0])) {
+                    $out[$kk] = $vv;
                     continue;
                 }
             }
