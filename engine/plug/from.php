@@ -121,7 +121,7 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
     }
     $chops = [];
     $k = 0;
-    foreach (\explode("\n", $value) as $v) {
+    foreach (\explode("\n", \rtrim($value, ' ')) as $v) {
         $chops[$k] = "";
         if ("" === $v) {
             $chops[$k - 1] .= "\n";
@@ -174,7 +174,7 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
                 ]);
                 $vv = $m[2] ?? null;
             } else {
-                [$kk, $n, $vv] = \array_replace(["", "", ""], \preg_split('/[ \t]*:([ \n\t]\s*|$)/', $v, 2, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY));
+                [$kk, $n, $vv] = \array_replace(["", "", ""], \preg_split('/[ \t]*:((?:[ \t][>|][+-]?|[ \n\t])\s*|$)/', $v, 2, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY));
                 // Fix case for invalid key-value pair(s) such as `xxx: xxx: xxx` as it should be `xxx:\n  xxx: xxx`
                 if ($n && "\n" !== $n[0] && false !== \strpos($vv, ': ') && '[' !== $vv[0] && ']' !== \substr($vv, -1) && '{' !== $vv[0] && '}' !== \substr($vv, -1)) {
                     $out[$kk] = $vv;
