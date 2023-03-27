@@ -177,7 +177,9 @@ function from(?string $value, string $dent = '  ', $content = "\t", $eval = true
                 [$kk, $n, $vv] = \array_replace(["", "", ""], \preg_split('/[ \t]*:((?:[ \t][>|][+-]?|[ \n\t])\s*|$)/', $v, 2, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY));
                 // Fix case for invalid key-value pair(s) such as `xxx: xxx: xxx` as it should be `xxx:\n  xxx: xxx`
                 if ($n && "\n" !== $n[0] && false !== \strpos($vv, ': ') && '[' !== $vv[0] && ']' !== \substr($vv, -1) && '{' !== $vv[0] && '}' !== \substr($vv, -1)) {
-                    $out[$kk] = $vv;
+                    $out[$kk] = \substr(\strtr("\n" . $vv, [
+                        "\n" . $dent => ' '
+                    ]), 1);
                     continue;
                 }
             }
