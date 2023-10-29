@@ -9,8 +9,7 @@ type: Markdown
 version: 3.0.0
 ...
 
-This extension converts YAML string to array/object and array/object to YAML string. It is very simple and does not
-support the complex YAML format. Only suitable for static data that does not contain references or variables.
+This extension converts YAML string to PHP data and/or PHP data to YAML string.
 
 ### Usage
 
