@@ -9,7 +9,7 @@ namespace x\y_a_m_l {
 }
 
 namespace x\y_a_m_l\from {
-    \define(__NAMESPACE__ . "\\str", '"(?>[^"\\\\]|\\\\.)*"|\'(?>\'\'|[^\'])*\'');
+    \define(__NAMESPACE__ . "\\str", '"(?>\\.|[^"])*"|\'(?>\'\'|[^\'])*\'');
     // Remove comment(s)
     function c(string $value): string {
         $out = "";
@@ -23,14 +23,14 @@ namespace x\y_a_m_l\from {
                 $value = \substr($value, \strlen($v));
                 continue;
             }
-            if (false !== \strpos('>|', $v[0]) && \preg_match('/^([>|]\d*[+-]?)[ \t]*(#[^\n]*)?(\n(\n|[ \t]+[^\n]*)*)?/', $v, $m)) {
-                $out .= $v = $m[1] . ($m[3] ?? "");
-                $value = \substr($value, \strlen($v));
+            if ("" === $out && false !== \strpos('>|', $v[0]) && \preg_match('/^([>|]\d*[+-]?)[ \t]*(#[^\n]*)?(\n(\n|[ \t]+[^\n]*)*)?/', $v, $m)) {
+                $out .= $m[1] . ($m[3] ?? "");
+                $value = \substr($value, \strlen($m[0]));
                 continue;
             }
             if (false !== \strpos('"\'', $v[0]) && \preg_match('/^' . str . '[^\n#]*/', $v, $m)) {
-                $out .= $v = \trim($m[0]);
-                $value = \substr($value, \strlen($v));
+                $out .= \trim($m[0]);
+                $value = \substr($value, \strlen($m[0]));
                 continue;
             }
             if (0 === \strpos($v, "\n")) {
@@ -39,7 +39,7 @@ namespace x\y_a_m_l\from {
                 continue;
             }
             $out .= $v;
-            $value = "";
+            $value = \substr($value, \strlen($v));
         }
         if ("" !== $value) {
             $out .= $value;
@@ -191,13 +191,13 @@ namespace x\y_a_m_l\from {
             ]), 1);
             if (isset($rule[1])) {
                 $cut = \substr($rule, -1);
-                // `>4`
+                // `>1`
                 if (\is_numeric($cut)) {
                     $cut = "";
-                    $dent = (int) \substr($rule, 1);
-                // `>4+`
+                    $dent -= ((int) \substr($rule, 1));
+                // `>1+`
                 } else {
-                    $dent = (int) \substr($rule, 1, -1);
+                    $dent -= ((int) \substr($rule, 1, -1));
                 }
             // `>`
             } else {
@@ -205,7 +205,7 @@ namespace x\y_a_m_l\from {
                 $dent = 0;
             }
             if ("" !== $cut && false === \strpos('+-', $cut)) {
-                return null; // :(
+                return $raw;
             }
             if ('+' !== $cut) {
                 $content = \rtrim($content) . ("" === $cut ? "\n" : "");
@@ -220,6 +220,8 @@ namespace x\y_a_m_l\from {
                 ]), [
                     "\n" . $d . "\n" => "\n\n"
                 ]), 1);
+            } else {
+                // throw new \Exception('https://yaml.org/spec/1.2.2#8111-block-indentation-indicator');
             }
             return $content;
         }
@@ -230,7 +232,7 @@ namespace x\y_a_m_l\from {
         if ('!' === $value[0]) {
             [$tag, $content] = \array_replace(["", ""], \preg_split('/\s+/', $value, 2, \PREG_SPLIT_NO_EMPTY));
             $value = v($content, $array, $lot);
-            if ('!!str' === $tag && !isset($lot[$tag]) && $value instanceof \DateTime) {
+            if ('!!str' === $tag && !isset($lot[$tag]) && $value instanceof \DateTimeInterface) {
                 return $content;
             }
             return t($value, $array, $lot, $tag);
