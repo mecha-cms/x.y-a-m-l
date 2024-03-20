@@ -13,7 +13,11 @@ namespace x\y_a_m_l\from {
     // Remove comment(s)
     function c(string $value): string {
         $out = "";
-        while (false !== ($v = \strpbrk($value, '#"\'>|' . "\n"))) {
+        if (false !== \strpos('>|', $value[0]) && \preg_match('/^([>|][+-]?\d*)[ \t]*(#[^\n]*)?(\n(\n|[ \t]+[^\n]*)*)?/', $value, $m)) {
+            $out .= $m[1] . ($m[3] ?? "");
+            $value = \substr($value, \strlen($m[0]));
+        }
+        while (false !== ($v = \strpbrk($value, '#"\'' . "\n"))) {
             if ("" !== ($r = \substr($value, 0, \strlen($value) - \strlen($v)))) {
                 $out .= $r;
                 $value = \substr($value, \strlen($r));
@@ -21,11 +25,6 @@ namespace x\y_a_m_l\from {
             if (0 === \strpos($v, '#')) {
                 $v = false !== ($n = \strpos($v, "\n")) ? \substr($v, 0, $n) : $v;
                 $value = \substr($value, \strlen($v));
-                continue;
-            }
-            if ("" === $out && false !== \strpos('>|', $v[0]) && \preg_match('/^([>|]\d*[+-]?)[ \t]*(#[^\n]*)?(\n(\n|[ \t]+[^\n]*)*)?/', $v, $m)) {
-                $out .= $m[1] . ($m[3] ?? "");
-                $value = \substr($value, \strlen($m[0]));
                 continue;
             }
             if (false !== \strpos('"\'', $v[0]) && \preg_match('/^' . str . '[^\n#]*/', $v, $m)) {
@@ -189,15 +188,15 @@ namespace x\y_a_m_l\from {
             $content = \substr(\strtr("\n" . $content, [
                 "\n" . \str_repeat(' ', $dent) => "\n"
             ]), 1);
-            if (isset($rule[1])) {
-                $cut = \substr($rule, -1);
+            $d = 0;
+            if ($cut = $rule[1] ?? "") {
+                // `>+1`
+                if (false !== \strpos('+-', $cut)) {
+                    $dent -= ($d = (int) \substr($rule, 2));
                 // `>1`
-                if (\is_numeric($cut)) {
+                } else if (\is_numeric($cut)) {
                     $cut = "";
-                    $dent -= ((int) \substr($rule, 1));
-                // `>1+`
-                } else {
-                    $dent -= ((int) \substr($rule, 1, -1));
+                    $dent -= ($d = (int) \substr($rule, 1));
                 }
             // `>`
             } else {
@@ -213,17 +212,16 @@ namespace x\y_a_m_l\from {
             if ('>' === $rule[0]) {
                 $content = f($content);
             }
-            if ($dent > 0) {
-                $d = \str_repeat(' ', $dent);
-                $content = \substr(\strtr(\strtr("\n" . $content, [
-                    "\n" => "\n" . $d
-                ]), [
-                    "\n" . $d . "\n" => "\n\n"
-                ]), 1);
-            } else {
+            if ($dent < 0) {
                 // throw new \Exception('https://yaml.org/spec/1.2.2#8111-block-indentation-indicator');
+                return null;
             }
-            return $content;
+            $v = $d > 0 ? \str_repeat(' ', $dent) : "";
+            return \substr(\strtr(\strtr("\n" . $content, [
+                "\n" => "\n" . $v
+            ]), [
+                "\n" . $v . "\n" => "\n\n"
+            ]), 1);
         }
         if ('[' === $value[0] && ']' === \substr($value, -1) || '{' === $value[0] && '}' === \substr($value, -1)) {
             return v(r($value), $array, $lot);
