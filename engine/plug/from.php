@@ -334,7 +334,7 @@ namespace x\y_a_m_l\from {
                 continue;
             }
             // Fix case for invalid key-value pair(s) such as `asdf: asdf: asdf` as it should be `asdf:\n asdf: asdf`
-            if ("\n" !== \substr($s, -1) && false === \strpos('!&*:>[{|', $v[0]) && (false !== \strpos($v, ":\n") || false !== \strpos($v, ":\t") || false !== \strpos($v, ': '))) {
+            if ("\n" !== \substr($s, -1) && false === \strpos('!"&\'*:>[{|', $v[0]) && (false !== \strpos($v, ":\n") || false !== \strpos($v, ":\t") || false !== \strpos($v, ': '))) {
                 $out[$k] = $v;
                 continue;
             }
