@@ -6,7 +6,7 @@ color: '#885933'
 link: 'https://github.com/taufik-nurrohman/y-a-m-l'
 author: Taufik Nurrohman
 type: Markdown
-version: 3.0.5
+version: 3.0.6
 ...
 
 This extension converts YAML string to PHP data and/or PHP data to YAML string.
