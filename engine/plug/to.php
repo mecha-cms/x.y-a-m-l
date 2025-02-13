@@ -2,6 +2,66 @@
 
 namespace x\y_a_m_l {
     function to($value, $dent = true): ?string {
+        if (\is_int($dent)) {
+            $dent = \str_repeat(' ', $dent > 0 ? $dent : 4);
+        } else if (true === $dent || !\is_string($dent)) {
+            $dent = \str_repeat(' ', 4);
+        }
+        return to\v($value, $dent);
+    }
+    \To::_('YAML', __NAMESPACE__ . "\\to");
+    \To::_('yaml', __NAMESPACE__ . "\\to"); // Alias
+}
+
+namespace x\y_a_m_l\to {
+    function l(array $v) {
+        if ([] === $v) {
+            return true;
+        }
+        // PHP >=8.1
+        if (\function_exists("\\array_is_list")) {
+            return \array_is_list($v);
+        }
+        $k = -1;
+        foreach ($v as $kk => $vv) {
+            if ($kk !== ++$k) {
+                return false;
+            }
+        }
+        return true;
+    }
+    function q(string $v): string {
+        if ("" === $v) {
+            return '""';
+        }
+        if (\is_numeric($v)) {
+            return "'" . $v . "'";
+        }
+        if (
+            // ` asdf` or `asdf `
+            ' ' === $v[0] || ' ' === \substr($v, -1) ||
+            // `asdf:`
+            ':' === \substr($v, -1) ||
+            // `asdf #asdf`
+            false !== ($n = \strpos($v, '#')) && false !== \strpos(" \n\t", \substr($v, $n - 1, 1)) ||
+            // `asdf: asdf`
+            false !== ($n = \strpos($v, ':')) && false !== \strpos(" \n\t", \substr($v, $n - 1, 1)) ||
+            // <https://yaml.org/spec/1.2.2#56-miscellaneous-characters>
+            // <https://yaml.org/spec/1.2.2#example-invalid-use-of-reserved-indicators>
+            false !== \strpos('!"#%&*+,-.:>?@[]`{|}' . "'\\", $v[0]) ||
+            false !== \strpos(',false,null,true,~,', ',' . \strtolower($v) . ',') ||
+            \strlen($v) !== \strcspn($v, "<=>[\\]{|}")
+        ) {
+            return "'" . \strtr($v, [
+                "'" => "''"
+            ]) . "'";
+        }
+        if (false !== \strpos("\n\t", $v[0]) || false !== \strpos("\n\t", \substr($v, -1)) || $v !== \addcslashes($v, "\\")) {
+            return \json_encode($v);
+        }
+        return $v;
+    }
+    function v($value, string $dent) {
         if (false === $value) {
             return 'false';
         }
@@ -27,14 +87,10 @@ namespace x\y_a_m_l {
         if ($value instanceof \DateTimeInterface) {
             return $value->format('c');
         }
-        if (\is_int($dent)) {
-            $dent = \str_repeat(' ', $dent);
-        } else if (true === $dent || !\is_string($dent)) {
-            $dent = \str_repeat(' ', 4);
-        }
         if (\is_string($raw = $value)) {
             if ("" !== $value && false !== \strpos($value, "\0")) {
                 $value = \base64_encode($value);
+                // `120 - strlen('!!binary ')`
                 if (\strlen($value) <= 111) {
                     return '!!binary ' . $value;
                 }
@@ -77,13 +133,13 @@ namespace x\y_a_m_l {
             if ($flow || '|' === $style) {
                 return $style . '-' . $d . "\n" . $dent . $value;
             }
-            return to\q($raw);
+            return q($raw);
         }
-        if (\is_array($value) && to\l($value)) {
+        if (\is_array($value) && l($value)) {
             if ([] === $value) {
                 return '[]';
             }
-            $out = [];
+            $r = [];
             $short = 0;
             foreach ($value as $v) {
                 if (\is_string($v) && ("" === $v || \strlen($v) < 41)) {
@@ -93,23 +149,28 @@ namespace x\y_a_m_l {
                 } else {
                     $short = 6; // Disable flow style value!
                 }
-                $out[] = \strtr(to($v, $dent), [
+                $v = v($v, $dent);
+                if (false !== \strpos('>|', $v[0])) {
+                    $short = 6; // Disable flow style value!
+                }
+                $r[] = \preg_replace('/^[ \t]+$/m', "", \strtr($v, [
                     "\n" => "\n  "
-                ]);
+                ]));
             }
             // Prefer flow style value?
             if ($short < 6) {
-                return '[ ' . \implode(', ', $out) . ' ]';
+                return '[ ' . \implode(', ', $r) . ' ]';
             }
-            return '- ' . \implode("\n- ", $out);
+            return '- ' . \implode("\n- ", $r);
         }
         if (\is_iterable($value)) {
             if (\is_object($value) && $value instanceof \stdClass && [] === (array) $value) {
                 return '{}';
             }
-            $out = [];
+            $r = [];
             $short = 0;
             foreach ($value as $k => $v) {
+                $k = "\0" === $k ? "? ~\n" : (\is_string($k) && false !== \strpos($k, "\n") ? '? ' . v($k, '  ') . "\n" : q($k));
                 if (\is_string($v) && ("" === $v || \strlen($v) < 41)) {
                     $short += 1;
                 } else if (\is_float($v) || \is_int($v) || \in_array($v, [-\INF, -\NAN, \INF, \NAN, false, null, true], true)) {
@@ -118,70 +179,29 @@ namespace x\y_a_m_l {
                     $short = 4; // Disable flow style value!
                 }
                 if (\is_iterable($v)) {
-                    $v = to($v, $dent);
+                    $v = v($v, $dent);
                     if (false !== \strpos('[{', $v[0])) {
                         $v = ' ' . $v;
                     } else {
-                        $v = "\n" . $dent . \strtr($v, [
+                        $v = \preg_replace('/^[ \t]+$/', "", "\n" . $dent . \strtr($v, [
                             "\n" => "\n" . $dent
-                        ]);
+                        ]));
                     }
-                    $out[] = to\q($k) . ':' . $v;
+                    $r[] = $k . ':' . $v;
                     continue;
                 }
-                $out[] = to\q($k) . ': ' . to($v, $dent);
+                if ('~' === ($v = v($v, $dent)) && '?' === ($k[0] ?? 0)) {
+                    $r[] = \substr($k, 0, -1);
+                    continue;
+                }
+                $r[] = $k . ': ' . $v;
             }
             // Prefer flow style value?
-            if ($short < 4) {
-                return '{ ' . \implode(', ', $out) . ' }';
+            if ($short < 4 && '?' !== ($k[0] ?? 0)) {
+                return '{ ' . \implode(', ', $r) . ' }';
             }
-            return "" !== ($value = \implode("\n", $out)) ? $value : null;
+            return "" !== ($value = \implode("\n", $r)) ? $value : null;
         }
-        return to\q((string) $value);
-    }
-    \To::_('YAML', __NAMESPACE__ . "\\to");
-    \To::_('yaml', __NAMESPACE__ . "\\to"); // Alias
-}
-
-namespace x\y_a_m_l\to {
-    function l(array $value) {
-        if ([] === $value) {
-            return true;
-        }
-        // PHP >=8.1
-        if (\function_exists("\\array_is_list")) {
-            return \array_is_list($value);
-        }
-        $key = -1;
-        foreach ($value as $k => $v) {
-            if ($k !== ++$key) {
-                return false;
-            }
-        }
-        return true;
-    }
-    function q(string $value): string {
-        if ("" === $value) {
-            return '""';
-        }
-        if (
-            ' ' === $value[0] ||
-            ' ' === \substr($value, -1) ||
-            ':' === \substr($value, -1) ||
-            false !== \strpos($value, ":\n") ||
-            false !== \strpos($value, ":\t") ||
-            false !== \strpos($value, ': ') ||
-            false !== \strpos('!"#&\'*+-.0123456789?', $value[0]) ||
-            false !== \strpos(',false,null,true,~,', ',' . \strtolower($value) . ',') ||
-            \strlen($value) !== \strcspn($value, ',<=>[\\]`{|}')
-        ) {
-            return "'" . \strtr($value, [
-                "'" => "''"
-            ]) . "'";
-        }
-        if ($value !== \addcslashes($value, "\\")) {
-            return \json_encode($value);
-        }
-        return $value;
+        return q((string) $value);
     }
 }

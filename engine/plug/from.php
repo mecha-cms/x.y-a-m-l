@@ -9,157 +9,82 @@ namespace x\y_a_m_l {
 }
 
 namespace x\y_a_m_l\from {
-    // Remove comment(s)
-    function c(string $value, string $str): string {
-        $out = "";
-        if (false !== \strpos('>|', $value[0]) && \preg_match('/^([>|][+-]?\d*)[ \t]*(#[^\n]*)?(\n(\n|[ \t]+[^\n]*)*)?/', $value, $m)) {
-            $out .= $m[1] . ($m[3] ?? "");
-            $value = \substr($value, \strlen($m[0]));
-        }
-        while (false !== ($v = \strpbrk($value, '#"\'' . "\n"))) {
-            if ("" !== ($r = \substr($value, 0, \strlen($value) - \strlen($v)))) {
-                $out .= $r;
-                $value = \substr($value, \strlen($r));
+    function b(string $v) {
+        $stack = "";
+        while ("" !== (string) $v) {
+            if ($n = \strcspn($v, '"' . "'" . '#[]{}')) {
+                $v = \substr($v, $n);
             }
-            if (0 === \strpos($v, '#')) {
-                $v = false !== ($n = \strpos($v, "\n")) ? \substr($v, 0, $n) : $v;
-                $value = \substr($value, \strlen($v));
+            if (('"' === ($c = $v[0] ?? 0) || "'" === $c) && "" !== ($q = q($v))[0]) {
+                $v = \substr($v, \strlen($q[0]));
                 continue;
             }
-            if (false !== \strpos('"\'', $v[0]) && \preg_match('/^' . $str . '[^\n#]*/', $v, $m)) {
-                $out .= \trim($m[0]);
-                $value = \substr($value, \strlen($m[0]));
-                continue;
-            }
-            if (0 === \strpos($v, "\n")) {
-                $out .= "\n";
-                $value = \substr($value, 1);
-                continue;
-            }
-            $out .= $v;
-            $value = \substr($value, \strlen($v));
-        }
-        if ("" !== $value) {
-            $out .= $value;
-            $value = "";
-        }
-        return $out;
-    }
-    function d(string $value) {
-        if (($d = \strspn($value, ' ')) > 0) {
-            $value = \substr(\strtr($value, ["\n" . \str_repeat(' ', $d) => "\n"]), $d);
-        }
-        return $value;
-    }
-    // <https://yaml-multiline.info>
-    function f(string $value, $dent = true): string {
-        $content = "";
-        $test = 0;
-        foreach (\explode("\n", $value) as $k => &$v) {
-            if ("" === $v) {
-                $content .= "\n";
-                continue;
-            }
-            if ($dent && $test !== ($t = \strspn($v, " \t"))) {
-                $test = $t;
-                $content .= "\n" . $v;
-                continue;
-            }
-            $content .= ($k > 0 && "\n" !== \substr($content, -1) ? ' ' : "") . ($k > 0 ? \ltrim($v) : $v);
-        }
-        return $content;
-    }
-    function r(string $value, string $str): string {
-        $out = ($a = '[' === $value[0]) ? '- ' : "";
-        $value = \trim(\trim(\substr($value, 1, -1)), ',');
-        foreach (\preg_split('/(\[(?>(?R)|[^][])*\]|\{(?>(?R)|[^{}])*\}|(?>' . $str . '|[^,:]+)\s*:\s*|' . $str . '|,)/', $value, -1, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY) as $v) {
-            if ("" === ($v = \trim($v))) {
-                continue;
-            }
-            if (':' === \substr($v, -1)) {
-                $out .= $v . ' ';
-                continue;
-            }
-            if (',' === $v) {
-                $out .= "\n" . ($a ? '- ' : "");
-                continue;
-            }
-            if ('[' === $v[0] && ']' === \substr($v, -1)) {
-                if ($o = ': ' === \substr($out, -2)) {
-                    $out = \substr($out, 0, -1) . "\n";
+            if ('#' === $c) {
+                if (false === ($n = \strpos($v, "\n"))) {
+                    break;
                 }
-                $v = r($v, $str);
-                $out .= $o ? $v : \strtr($v, [
-                    "\n" => "\n  "
-                ]);
+                $v = \substr($v, $n + 1);
                 continue;
             }
-            if ('{' === $v[0] && '}' === \substr($v, -1)) {
-                $out .= "\n " . \strtr(r($v, $str), [
-                    "\n" => "\n "
-                ]);
+            if ('[' === $c || '{' === $c) {
+                $stack .= $c;
+                $v = \substr($v, 1);
                 continue;
             }
-            $out .= $v;
-            // Fix case for value-less object flow like `{a,b,c}`
-            $test = false !== ($v = \strrchr($out, "\n")) ? \substr($v, 1) : $out;
-            if (0 !== \strpos($test, '- ') && false === \strpos(\preg_replace('/' . $str . '/', "", $test), ': ')) {
-                $out .= ':';
+            if (']' === $c || '}' === $c) {
+                if (']' === $c && '[' !== \substr($stack, -1) || '}' === $c && '{' !== \substr($stack, -1)) {
+                    return false; // Broken :(
+                }
+                $stack = \substr($stack, 0, -1);
+                $v = \substr($v, 1);
+                if ("" === $stack) {
+                    break;
+                }
             }
         }
-        return $out;
+        return "" === $stack;
     }
-    // <https://yaml.org/type>
-    function t($value, $array, $lot, $tag) {
-        if (isset($lot[$tag]) && \is_callable($lot[$tag])) {
-            return \call_user_func($lot[$tag], $value, $array, $lot);
+    function c(string $v) {
+        if (0 === ($n = \strpos($v, '#'))) {
+            return "";
         }
-        if (0 === \strpos($tag, '!!')) {
-            $tag = \substr($tag, 2);
-            if ('binary' === $tag) {
-                return \base64_decode(\preg_replace('/\s+/', "", \trim($value ?? 'AA==')));
-            }
-            if ('bool' === $tag) {
-                return (bool) $value;
-            }
-            if ('float' === $tag) {
-                return (float) $value;
-            }
-            if ('int' === $tag) {
-                return (int) $value;
-            }
-            if ('map' === $tag) {
-                return (object) $value;
-            }
-            if ('null' === $tag) {
-                return null;
-            }
-            if ('seq' === $tag) {
-                return \array_values((array) $value);
-            }
-            if ('str' === $tag) {
-                return (string) $value;
-            }
-            if ('timestamp' === $tag) {
-                return new \DateTime((string) $value);
-            }
+        if (false !== \strpos(" \t", \substr($v, $n - 1, 1))) {
+            return \substr($v, 0, $n - 1) . \strstr(\substr($v, $n), "\n");
         }
-        return $value;
+        return $v;
     }
-    function v(?string $value, $array = false, array &$lot = []) {
-        if ("" === ($value = \trim($raw = $value ?? ""))) {
+    function d(string $v, $next = false) {
+        if ($d = \strspn($v, ' ')) {
+            $v = \substr(\strtr($v, [
+                "\n" . \str_repeat(' ', $d) => "\n"
+            ]), $d);
+        } else if ($next && ($d = \strspn($v, ' ', \strpos($v, "\n") + 1))) {
+            $v = \strtr($v, [
+                "\n" . \str_repeat(' ', $d) => "\n"
+            ]);
+        }
+        return $v;
+    }
+    function e(string $v, $array = false, array &$lot = []) {
+        if ("" === $v) {
             return null;
         }
-        $str = '"(?>\\.|[^"])*"|' . "'(?>''|[^'])*'";
-        // Normalize line break(s)
-        $value = \strtr($value, [
-            "\r\n" => "\n",
-            "\r" => "\n"
-        ]);
-        if ("" === ($value = \trim(c($value, $str)))) {
-            return null;
+        if ('!' === $v[0] && '!' !== ($k = \strtok($v, " \n\t"))) {
+            $v = v(d($w = \trim(\substr($v, \strlen($k) + 1), "\n")), $array, $lot);
+            if ('!!str' === $k && !isset($lot[$k]) && $v instanceof \DateTimeInterface) {
+                return $w;
+            }
+            return t($v, $k, $array, $lot);
         }
-        if (\array_key_exists($key = \strtolower($value), $keys = [
+        if ('&' === $v[0] && '&' !== ($k = \strtok($v, " \n\t"))) {
+            $v = \substr($v, \strlen($k) + 1);
+            $lot[$k] = $v = v(d($v), $array, $lot);
+            return $v;
+        }
+        if ('*' === $v[0] && '*' !== ($k = \strtok($v, " \n\t"))) {
+            return $lot['&' . \substr($k, 1)] ?? null;
+        }
+        if (\array_key_exists($k = \strtolower($v), $a = [
             "''" => "",
             '""' => "",
             '+.inf' => \INF,
@@ -175,173 +100,723 @@ namespace x\y_a_m_l\from {
             '{}' => $array ? [] : (object) [],
             '~' => null
         ])) {
-            return $keys[$key];
+            return $a[$k];
         }
-        if ('"' === $value[0] && '"' === \substr($value, -1)) {
-            return \stripcslashes(f(\strtr(\substr($value, 1, -1), [
-                "\\\n" => ""
-            ])));
+        if ('"' === $v[0] && '"' === \substr($v, -1)) {
+            if (false !== \strpos($v, "\\'")) {
+                return null; // Broken :(
+            }
+            $r = "";
+            foreach (\explode("\n", \strtr($v, [
+                "\\ " => "",
+                "\\\n" => "",
+                "\\\t" => ""
+            ])) as $v) {
+                if ("" === $r) {
+                    $r .= $v;
+                    continue;
+                }
+                if ("" === $v) {
+                    $r .= "\\n";
+                    continue;
+                }
+                $r .= "\\n" === \substr($r, -2) ? $v : ' ' . \ltrim($v);
+            }
+            return \json_decode($r);
         }
-        if ("'" === $value[0] && "'" === \substr($value, -1)) {
-            return f(\strtr(\substr($value, 1, -1), [
+        if ("'" === $v[0] && "'" === \substr($v, -1)) {
+            if (false !== \strpos($v, "\\'")) {
+                return null; // Broken :(
+            }
+            $r = "";
+            foreach (\explode("\n", \strtr(\substr($v, 1, -1), [
                 "''" => "'"
-            ]), false);
-        }
-        // Fold-style or literal-style value
-        if (false !== \strpos('>|', $value[0])) {
-            [$rule, $content] = \array_replace(["", ""], \explode("\n", c(\ltrim($raw), $str), 2));
-            $dent = \strspn(\trim($content, "\n"), ' ');
-            $content = \substr(\strtr("\n" . $content, [
-                "\n" . \str_repeat(' ', $dent) => "\n"
-            ]), 1);
-            $d = 0;
-            if ($cut = $rule[1] ?? "") {
-                // `>+1`
-                if (false !== \strpos('+-', $cut)) {
-                    $dent -= ($d = (int) \substr($rule, 2));
-                // `>1`
-                } else if (\is_numeric($cut)) {
-                    $cut = "";
-                    $dent -= ($d = (int) \substr($rule, 1));
+            ])) as $v) {
+                if ("" === $r) {
+                    $r .= $v;
+                    continue;
                 }
-            // `>`
-            } else {
-                $cut = "";
-                $dent = 0;
+                if ("" === $v) {
+                    $r .= "\n";
+                    continue;
+                }
+                $r .= "\n" === \substr($r, -1) ? $v : ' ' . \ltrim($v);
             }
-            if ("" !== $cut && false === \strpos('+-', $cut)) {
-                return $raw;
-            }
-            if ('+' !== $cut) {
-                $content = \rtrim($content) . ("" === $cut ? "\n" : "");
-            }
-            if ('>' === $rule[0]) {
-                $content = f($content);
-            }
-            if ($dent < 0) {
-                // throw new \Exception('https://yaml.org/spec/1.2.2#8111-block-indentation-indicator');
-                return null;
-            }
-            $v = $d > 0 ? \str_repeat(' ', $dent) : "";
-            return \substr(\strtr(\strtr("\n" . $content, [
-                "\n" => "\n" . $v
-            ]), [
-                "\n" . $v . "\n" => "\n\n"
-            ]), 1);
+            return $r;
         }
-        if ('[' === $value[0] && ']' === \substr($value, -1) || '{' === $value[0] && '}' === \substr($value, -1)) {
-            return v(r($value, $str), $array, $lot);
-        }
-        // A tag
-        if ('!' === $value[0]) {
-            [$tag, $content] = \array_replace(["", ""], \preg_split('/\s+/', $value, 2, \PREG_SPLIT_NO_EMPTY));
-            $value = v($content, $array, $lot);
-            if ('!!str' === $tag && !isset($lot[$tag]) && $value instanceof \DateTimeInterface) {
-                return $content;
+        if (false !== \strpos('[{', $v[0])) {
+            if (0 === \strpos($v = o($v), "-\0")) {
+                $r = [];
+                foreach (\explode("\n-\0", \substr($v, 2)) as $v) {
+                    $r[] = v(d(\ltrim($v, "\n")), $array, $lot);
+                }
+                return $r;
             }
-            return t($value, $array, $lot, $tag);
+            return v($v, $array, $lot);
         }
-        // <https://yaml.org/spec/1.2.2#692-node-anchors>
-        if (false !== \strpos('&*', $value[0]) && \preg_match('/^([&*])([^\s,\[\]{}]+)([ \n\t]|$)/', $value, $m)) {
-            $key = '&' . $m[2];
-            if ('&' === $m[1]) {
-                return ($lot[$key] = v(d(\substr($value, \strlen($m[0]))), $array, $lot));
-            }
-            return $lot[$key] ?? null;
+        if (false !== \strpos('>|', $v[0])) {
+            return f($v);
         }
-        // List-style value
-        if ('-' === $value[0] && \strlen($value) > 2 && false !== \strpos(" \n\t", $value[1])) {
-            $out = [];
-            foreach (\preg_split('/\n-[ \n\t]/', \substr($value, 2)) as $v) {
-                $v = \strtr($v, [
-                    "\n  " => "\n"
-                ]);
-                $out[] = v($v, $array, $lot);
-            }
-            return $out;
-        }
-        if (\strlen($value) > 2 && '0' === $value[0]) {
-            // Hex
-            if (\preg_match('/^0x[a-f\d]+$/i', $value)) {
-                return \hexdec($value);
-            }
+        if (\strlen($n = \strtolower($v)) > 2 && '0' === $n[0]) {
             // Octal
-            if (\preg_match('/^0o?[0-7]+$/i', $value)) {
-                if (false !== \strpos('Oo', $value[1])) {
-                    // PHP < 8.1
-                    $value = \substr($value, 2);
-                }
-                return \octdec($value);
+            if ('o' === $n[1] && \strspn($n, '01234567', 2) === \strlen($n) - 2) {
+                return \octdec(\substr($n, 2));
+            }
+            // Hex
+            if ('x' === $n[1] && \strspn($n, '0123456789abcdef', 2) === \strlen($n) - 2) {
+                return \hexdec($n);
+            }
+            if (\strspn($n, '01234567', 1) === \strlen($n) - 1) {
+                return \octdec($n);
             }
         }
-        // Exponent
-        if (\preg_match('/^[+-]?\d*[.]?\d+e[+-]?\d+$/i', $value)) {
-            return (float) $value;
-        }
-        if (\is_numeric($value)) {
-            return false !== \strpos($value, '.') ? (float) $value : (int) $value;
+        // <https://yaml.org/spec/1.2.2#10214-floating-point>
+        if (\strspn($n, '+-.0123456789e') === \strlen($n) && \preg_match('/^-?(?>0|\d+)(?>\.\d*)?(?>[e][-+]?\d+)$/', $n)) {
+            return (float) $n;
         }
         // <https://yaml.org/type/timestamp.html>
-        if (\is_numeric($value[0]) && \preg_match('/^[1-9]\d{3,}-(0\d|1[0-2])-(0\d|[1-2]\d|3[0-1])((t|[ \t]+)([0-1]\d|2[0-4]):([0-5]\d|60)(:([0-5]\d|60)([.]\d+)?)?([ \t]*[+-]([0-1]\d|2[0-4]):([0-5]\d|60)(:([0-5]\d|60)([.]\d+)?)?|z)?)?$/i', $value)) {
-            return new \DateTime($value);
+        if (\strspn($n, '+-.0123456789:tz' . " \t") === \strlen($n) && \preg_match('/^\d{4,}-\d{1,2}-\d{1,2}(?>(?>[t]|\s+)\d{1,2}:\d{1,2}:\d{1,2}(?>\.\d*)?(?>\s*[z]|[-+]\d{1,2}(?>:\d{2})?)?)?$/', $n)) {
+            return new \DateTime($n);
         }
-        if (false === \strpos($value, ":\n") && false === \strpos($value, ":\t") && false === \strpos($value, ': ') && ':' !== \substr($value, -1)) {
-            return f($value, false);
+        if (\is_numeric($n)) {
+            return 0 + $n;
         }
-        $block = -1;
-        $blocks = [];
-        $rows = \explode("\n", $value);
-        foreach ($rows as $row) {
-            $dent = \strspn($row, ' ');
-            $current = $dent > 0 ? \substr($row, $dent) : $row;
-            if ($prev = $blocks[$block] ?? 0) {
-                // A blank line
-                if ("" === $current) {
-                    $blocks[$block] .= "\n";
+        $r = "";
+        foreach (\explode("\n", $v) as $v) {
+            if ("" === ($v = \trim($v))) {
+                $r .= "\n";
+                continue;
+            }
+            $r .= "" === $r || "\n" === \substr($r, -1) ? $v : ' ' . $v;
+        }
+        return $r;
+    }
+    // <https://yaml.org/spec/1.2.2#81-block-scalar-styles>
+    function f(string $v) {
+        if (false === ($n = \strpos($v, "\n"))) {
+            return $v;
+        }
+        $k = \trim(\substr($v, 0, $n));
+        $q = $k[0];
+        $v = \substr($v, $n + 1);
+        if ("" === ($k = \substr($k, 1))) {
+            $d = $e = "";
+        } else if (false !== \strpos('+-', $k[0])) {
+            $d = \substr($k, 1, \strspn($k, '0123456789', 1));
+            $e = $k[0];
+        } else {
+            $d = \substr($k, 0, $n = \strspn($k, '0123456789'));
+            $e = \substr($k, $n);
+        }
+        $d = (int) $d;
+        $dd = 0;
+        $v = \explode("\n", $v);
+        foreach ($v as $vv) {
+            if ("" !== \trim($vv) && ($ddd = \strspn($vv, ' '))) {
+                if ($d > 0 && $ddd < $d) {
+                    return null; // Broken :(
+                }
+                // <https://yaml.org/spec/1.2.2#example-invalid-block-scalar-indentation-indicators>
+                if (0 !== $dd && $ddd < $dd) {
+                    return null; // Broken :(
+                }
+                if (0 === $dd) {
+                    $dd = $ddd;
+                }
+            }
+        }
+        if (0 === $d) {
+            $d = $dd;
+        }
+        $r = "";
+        if ('>' === $q) {
+            foreach ($v as $vv) {
+                if ("" === \trim($vv)) {
+                    $r .= "\n";
                     continue;
                 }
-                if (false !== \strpos($prev, '[') && ']' === $current || false !== \strpos($prev, '{') && '}' === $current) {
-                    $blocks[$block] .= "\n" . $current;
+                if (($dd = \strspn($vv, ' ')) >= $d) {
+                    $vv = \substr($vv, $d);
+                }
+                if (' ' === ($vv[0] ?? 0)) {
+                    $r .= "\n" . $vv;
                     continue;
                 }
-                // A list
-                if ('-' === $current) {
-                    $blocks[$block] .= "\n- ";
+                if ("\n" === \substr($r, -1)) {
+                    $r .= $vv;
                     continue;
                 }
-                if ('-' === $current[0] && false !== \strpos(" \t", $current[1])) {
-                    $blocks[$block] .= "\n- " . \substr($current, 2);
+                if (\strspn(\substr(\strrchr($r, "\n"), 1), ' ')) {
+                    $r .= "\n" . $vv;
                     continue;
                 }
-                if ($dent > 0) {
-                    if ("\n- " === \substr($prev, -3)) {
-                        $blocks[$block] .= $current;
+                $r .= ' ' . $vv;
+            }
+        } else {
+            foreach ($v as $vv) {
+                if ("" === \trim($vv)) {
+                    $r .= "\n";
+                    continue;
+                }
+                if (($dd = \strspn($vv, ' ')) >= $d) {
+                    $vv = \substr($vv, $d);
+                }
+                $r .= "\n" . $vv;
+            }
+        }
+        $r = \substr($r, 1);
+        return '+' === $e ? $r : ('-' === $e ? \rtrim($r) : ("\n" === \substr($r, -1) ? \rtrim($r) . "\n" : $r));
+    }
+    function k(string $k, $array = false, array &$lot = []) {
+        if (\is_numeric($k)) {
+            return $k;
+        }
+        $k = v($k, $array, $lot);
+        if (-\INF === $k || -\NAN === $k || \INF === $k || \NAN === $k || \is_array($k) || \is_object($k) || false === $k || null === $k || true === $k) {
+            $k = "\0" . \serialize($k) . "\0";
+        }
+        return $k;
+    }
+    function o(string $v) {
+        $b = $v[0];
+        $d = $r = $stack = "";
+        while ("" !== (string) $v) {
+            if ($n = \strcspn($v, '"' . "'" . ',:[]{}')) {
+                $r .= \ltrim(\substr($v, 0, $n));
+                $v = \ltrim(\substr($v, $n));
+            }
+            if (('"' === ($c = $v[0] ?? 0) || "'" === $c) && "" !== ($q = q($v))[0]) {
+                $r .= $q[0];
+                $v = c(\substr($v, \strlen($q[0])));
+                continue;
+            }
+            if (',' === $c) {
+                if ($c === $v) {
+                    return ""; // Broken :(
+                }
+                $v = \ltrim(\substr(c($v), 1));
+                if ("" !== ($q = q($w = \trim(\strrchr($r, "\n"), " \n\t")))[0] && (':' === \substr($q[1] = \trim($q[1]), -1) || ': ' === \substr($q[1], 0, 2))) {
+                    // …
+                } else if (':' === \substr($w, -1) || false !== \strpos($w, ': ')) {
+                    // …
+                } else {
+                    if ("" !== $w && '-' !== $w && '- ' !== \substr($w, 0, 2)) {
+                        $r .= ': ~';
+                    }
+                }
+                $r .= "\n" . $d . ('[' === \substr($stack, -1) ? '- ' : "");
+                continue;
+            }
+            if (':' === $c) {
+                if ($c === $v) {
+                    return ""; // Broken :(
+                }
+                $r .= $c;
+                $v = \substr(c($v), 1);
+                if (false === \strpos(" \n\t", $v[0])) {
+                    continue;
+                }
+                $r .= ' ';
+                $v = \ltrim($v);
+                continue;
+            }
+            if ('[' === $c) {
+                $stack .= $c;
+                $d .= ' ';
+                if (': ' === \substr($r, -2)) {
+                    $r = \rtrim($r);
+                }
+                $r .= "\n" . $d . '- ';
+                $v = \ltrim(\substr(c($v), 1));
+                continue;
+            }
+            if (']' === $c) {
+                if ('[' !== \substr($stack, -1)) {
+                    return ""; // Broken :(
+                }
+                $stack = \substr($stack, 0, -1);
+                $v = \ltrim(\substr(c($v), 1));
+                if ("" !== $v && false === \strpos(',]}', $v[0])) {
+                    return ""; // Broken :(
+                }
+                $d = \substr($d, 0, -1);
+                if ("" !== ($q = q($w = \trim(\strrchr($r = \rtrim($r, "\n"), "\n"))))[0] && (':' === \substr($q[1] = \trim($q[1]), -1) || ': ' === \substr($q[1], 0, 2))) {
+                    // …
+                } else if (':' === \substr($w, -1) || false !== \strpos($w, ': ')) {
+                    // …
+                } else {
+                    if ("" !== $w && '-' !== $w && '- ' !== \substr($w, 0, 2)) {
+                        $r .= ': ~';
+                    }
+                }
+                if ('-' === $w) {
+                    $r = \rtrim(\substr($r, 0, -2));
+                }
+                continue;
+            }
+            if ('{' === $c) {
+                $stack .= $c;
+                $v = \ltrim(\substr(c($v), 1));
+                if ("" !== $v && false !== \strpos(',[{', $v[0])) {
+                    return ""; // Broken :(
+                }
+                $d .= ' ';
+                if (': ' === \substr($r, -2)) {
+                    $r = \rtrim($r);
+                }
+                $r .= "\n" . $d;
+                continue;
+            }
+            if ('}' === $c) {
+                if ('{' !== \substr($stack, -1)) {
+                    return ""; // Broken :(
+                }
+                $stack = \substr($stack, 0, -1);
+                $v = \ltrim(\substr(c($v), 1));
+                if ("" !== $v && false === \strpos(',]}', $v[0])) {
+                    return ""; // Broken :(
+                }
+                $d = \substr($d, 0, -1);
+                if ("" !== ($q = q($w = \trim(\strrchr($r = \rtrim($r, "\n"), "\n"))))[0] && (':' === \substr($q[1] = \trim($q[1]), -1) || ': ' === \substr($q[1], 0, 2))) {
+                    // …
+                } else if (':' === \substr($w, -1) || false !== \strpos($w, ': ')) {
+                    // …
+                } else {
+                    if ("" !== $w && '-' !== $w && '- ' !== \substr($w, 0, 2)) {
+                        $r .= ': ~';
+                    }
+                }
+                continue;
+            }
+            $r .= \ltrim(c($v));
+            break;
+        }
+        if ("" !== $stack) {
+            return ""; // Broken :(
+        }
+        if ("" === \trim($r)) {
+            return '[' === $b ? '[]' : '{}';
+        }
+        return d(\trim(\rtrim($r), "\n"));
+    }
+    function q(string $v) {
+        // `""…`
+        // `''…`
+        if (0 === \strpos($v, '""') || 2 === \strspn($v, "'")) {
+            return [$v[0] . $v[1], \substr($v, 2)];
+        }
+        if ("" === $v || false === \strpos('"' . "'", $v[0])) {
+            return ["", $v];
+        }
+        // `"`
+        // `'`
+        $r = [$c = $v[0], ""];
+        $v = \substr($v, 1);
+        // <https://yaml.org/spec/1.2.2#731-double-quoted-style>
+        if ('"' === $c) {
+            while (false !== ($n = \strpos($v, $c))) {
+                // `"asdf"` or `"asdf\"`
+                $r[0] .= \substr($v, 0, $n += 1);
+                $v = \substr($v, $n);
+                if ("\\" !== \substr($r[0], -2, 1)) {
+                    // `"asdf"`
+                    break;
+                }
+                // `"asdf\"…`
+            }
+            $r[1] .= $v;
+            return $c === $r[0] ? ["", $c . $r[1]] : $r;
+        }
+        // <https://yaml.org/spec/1.2.2#732-single-quoted-style>
+        if ("'" === $c) {
+            while (false !== ($n = \strpos($v, $c))) {
+                // `'asdf'`
+                $r[0] .= \substr($v, 0, $n += 1);
+                $v = \substr($v, $n);
+                if ($c === ($v[0] ?? 0)) {
+                    $r[0] .= $c;
+                    $v = \substr($v, 1);
+                    // `'asdf''…`
+                    continue;
+                }
+                // `'asdf'`
+                break;
+            }
+            $r[1] .= $v;
+            return $c === $r[0] ? ["", $c . $r[1]] : $r;
+        }
+    }
+    // <https://yaml.org/type>
+    function t($v, $k, $array, $lot) {
+        if (\is_callable($lot[$k] ?? 0)) {
+            return \call_user_func($lot[$k], $v, $array, $lot);
+        }
+        if (0 === \strpos($k, '!!')) {
+            $k = \substr($k, 2);
+            if ('binary' === $k) {
+                return \base64_decode(\preg_replace('/\s+/', "", \trim($v ?? 'AA==')));
+            }
+            if ('bool' === $k) {
+                return (bool) $v;
+            }
+            if ('float' === $k) {
+                return (float) $v;
+            }
+            if ('int' === $k) {
+                return (int) $v;
+            }
+            if ('map' === $k) {
+                return (object) $v;
+            }
+            if ('null' === $k) {
+                return null;
+            }
+            if ('seq' === $k) {
+                return \array_values((array) $v);
+            }
+            if ('str' === $k) {
+                return (string) $v;
+            }
+            if ('timestamp' === $k) {
+                return new \DateTime((string) $v);
+            }
+        }
+        return $v;
+    }
+    function v(?string $value, $array = false, array &$lot = []) {
+        $from = \strtr(\trim($value ?? "", "\n"), [
+            "\r\n" => "\n",
+            "\r" => "\n"
+        ]);
+        if ("" === ($from = d($from))) {
+            return null;
+        }
+        $i = -1;
+        $r = [];
+        foreach (\explode("\n", $from) as $v) {
+            $d = \strspn($v, ' ');
+            // Part of a block…
+            if ($w = $r[$i] ?? 0) {
+                $w = \rtrim(\strstr($w . "\n", "\n", true), " \t");
+                if (false !== \strpos('>|', \trim(\rtrim(c($w), '+-0123456789')))) {
+                    if ($d || "" === $v) {
+                        $r[$i] .= "\n" . $v;
                         continue;
                     }
-                    $blocks[$block] .= "\n" . $row;
+                    if ('#' === $v[0]) {
+                        $r[$i] .= "\n";
+                        continue;
+                    }
+                    $r[++$i] = $v;
                     continue;
                 }
+                if (('"' === ($c = $w[0] ?? 0) || "'" === $c)) {
+                    if ("" === $v || "" === q($r[$i])) {
+                        $r[$i] .= "\n" . $v;
+                        continue;
+                    }
+                }
+                if ("" === c($v)) {
+                    continue;
+                }
+                if ("-\0" === \substr($w, 0, 2)) {
+                    $last = \trim(\substr($r[$i], \strrpos("\n" . $r[$i], "\n-\0") + 2), " \n\t");
+                    if (('"' === ($c = $last[0] ?? 0) || "'" === $c) && "" === q($last)[0]) {
+                        $r[$i] .= "\n" . $v;
+                        continue;
+                    }
+                    if ('-' === \trim(c($v))) {
+                        $r[$i] .= "\n-\0";
+                        continue;
+                    }
+                    if ('-' === ($v[0] ?? 0) && false !== \strpos(" \0\t", \substr($v, 1, 1))) {
+                        $r[$i] .= "\n-\0" . \substr($v, 2);
+                        continue;
+                    }
+                    if ($d) {
+                        $r[$i] .= "\n" . $v;
+                        continue;
+                    }
+                }
+                if ("?\0" === \substr($w, 0, 2)) {
+                    $last = \trim(\substr($r[$i], \strrpos("\n" . $r[$i], "\n?\0") + 2), " \n\t");
+                    if (('"' === ($c = $last[0] ?? 0) || "'" === $c) && "" === q($last)[0]) {
+                        $r[$i] .= "\n" . $v;
+                        continue;
+                    }
+                    if (':' === \trim(c($v))) {
+                        $r[$i] .= "\n:";
+                        continue;
+                    }
+                    if (':' === ($v[0] ?? 0) && false !== \strpos(" \t", \substr($v, 1, 1))) {
+                        $r[$i] .= "\n: " . \substr($v, 2);
+                        continue;
+                    }
+                    if ('?' === ($v[0] ?? 0) && false !== \strpos(" \0\t", \substr($v, 1, 1))) {
+                        $r[++$i] = "?\0" . \substr($v, 2);
+                        continue;
+                    }
+                    if ($d) {
+                        $r[$i] .= "\n" . $v;
+                        continue;
+                    }
+                    $r[++$i] = $v;
+                    continue;
+                }
+                if ("" !== ($q = q($w))[0] && ':' === (\trim($q[1])[0] ?? 0)) {
+                    if ($d) {
+                        $r[$i] .= "\n" . $v;
+                        continue;
+                    }
+                    if ('?' === ($v[0] ?? 0) && false !== \strpos(" \0\t", \substr($v, 1, 1))) {
+                        $v = "?\0" . \substr($v, 2);
+                    }
+                    $r[++$i] = $v;
+                    continue;
+                }
+                $w = \trim(c($w));
+                if ('[' === $w || ('[' === \substr($w, -1) && false !== \strpos(" \t", \substr($w, -2, 1)) && ':' === \trim(\substr($w, -3, 1)))) {
+                    if (b(\substr($r[$i] .= "\n" . $v, \strlen($w) - 1))) {
+                        $i += 1;
+                    }
+                    continue;
+                }
+                if ('{' === $w || ('{' === \substr($w, -1) && false !== \strpos(" \t", \substr($w, -2, 1)) && ':' === \trim(\substr($w, -3, 1)))) {
+                    if (b(\substr($r[$i] .= "\n" . $v, \strlen($w) - 1))) {
+                        $i += 1;
+                    }
+                    continue;
+                }
+                if (':' === \substr(\trim(\strtok($w, '!&*')), -1)) {
+                    if ($d) {
+                        $r[$i] .= "\n" . $v;
+                        continue;
+                    }
+                    if ('-' === \trim(c($v))) {
+                        $r[$i] .= "\n-\0";
+                        continue;
+                    }
+                    if ('-' === ($v[0] ?? 0) && false !== \strpos(" \0\t", \substr($v, 1, 1))) {
+                        $r[$i] .= "\n-\0" . \substr($v, 2);
+                        continue;
+                    }
+                    if ('?' === ($v[0] ?? 0) && false !== \strpos(" \0\t", \substr($v, 1, 1))) {
+                        $v = "?\0" . \substr($v, 2);
+                    }
+                    $r[++$i] = $v;
+                    continue;
+                }
+                if (false !== ($n = \strpos($w, ":\t") ?: \strpos($w, ': '))) {
+                    if (('"' === ($c = \trim(\substr($w, $n + 2))[0] ?? 0) || "'" === $c) && "" === q(\trim(\substr($r[$i], $n + 2)))[0]) {
+                        $r[$i] .= "\n" . $v;
+                        continue;
+                    }
+                    if (false !== \strpos('>|', \trim(\rtrim(c(\substr($w, $n + 2)), '+-0123456789')))) {
+                        if ($d || "" === $v) {
+                            $r[$i] .= "\n" . $v;
+                            continue;
+                        }
+                        if ('#' === $v[0]) {
+                            $r[$i] .= "\n";
+                            continue;
+                        }
+                    }
+                    if ('?' === ($v[0] ?? 0) && false !== \strpos(" \0\t", \substr($v, 1, 1))) {
+                        $v = "?\0" . \substr($v, 2);
+                    }
+                    $r[++$i] = $v;
+                    continue;
+                }
+                $r[$i] .= "\n" . $v;
+                continue;
             }
-            $blocks[++$block] = $current;
+            // Start of a block…
+            if ("" === c($v)) {
+                continue;
+            }
+            if ("" !== ($q = q($v))[0]) {
+                if (':' === (($q[1] = \ltrim($q[1]))[0] ?? 0) && false !== \strpos(" \n\t", $s = \substr($q[1], 1, 1))) {
+                    $qq = q(\ltrim(\substr($q[1], 1)));
+                    $v = $q[0] . ':' . $s . $qq[0] . c($qq[1]);
+                } else {
+                    $v = $q[0] . c($q[1]);
+                }
+            } else {
+                $v = c($v);
+            }
+            if ('-' === $v || '?' === $v) {
+                $r[++$i] = $v . "\0";
+                continue;
+            }
+            if ("" !== $v && false !== \strpos('-?', $v[0]) && false !== \strpos(" \0\t", \substr($v, 1, 1))) {
+                $r[++$i] = $v[0] . "\0" . \substr($v, 2);
+                continue;
+            }
+            // <https://yaml.org/spec/1.2.2#741-flow-sequences>
+            if ('[' === $v || ('[' === \substr($v, -1) && false !== \strpos(" \t", \substr($v, -2, 1)) && ':' === \trim(\substr($v, -3, 1)))) {
+                $r[++$i] = $v;
+                continue;
+            }
+            // <https://yaml.org/spec/1.2.2#742-flow-mappings>
+            if ('{' === $v || ('{' === \substr($v, -1) && false !== \strpos(" \t", \substr($v, -2, 1)) && ':' === \trim(\substr($v, -3, 1)))) {
+                $r[++$i] = $v;
+                continue;
+            }
+            $r[++$i] = $v;
         }
-        $out = [];
-        foreach ($blocks as $block) {
-            if (false !== \strpos('"\'', $block[0]) && \preg_match('/^(' . $str . '):[ \n\t]/', $block, $m)) {
-                $out[v($m[1])] = v(d(\substr($block, \strlen($m[0]))), $array, $lot);
+        $to = [];
+        foreach ($r as $v) {
+            // `!asdf asdf`
+            // `&asdf asdf`
+            // `*asdf asdf`
+            if (0 !== ($c = $v[0] ?? 0) && false !== \strpos('!&*', $c) && $c !== ($r = \strtok($v, " \n\t"))) {
+                return e($v, $array, $lot);
+            }
+            // `>\n asdf…`
+            // `[asdf…`
+            // `{asdf…`
+            // `|\n asdf…`
+            if (0 !== $c && false !== \strpos('>[{|', $c)) {
+                return e($v, $array, $lot);
+            }
+            // `"asdf asdf \"asdf\" asdf"`
+            // `'asdf asdf ''asdf'' asdf'`
+            if ('"' === $c || "'" === $c) {
+                // `"asdf`
+                // `'asdf`
+                if ("" === ($q = q($v))[0]) {
+                    return null; // Broken :(
+                }
+                // `"asdf"#`
+                // `'asdf'#`
+                if ('#' === ($q[1][0] ?? 0)) {
+                    return null; // Broken :(
+                }
+                // `"asdf"…`
+                // `'asdf'…`
+                if ("" !== \trim(c($q[1]))) {
+                    // `"asdf": `
+                    // `'asdf': `
+                    if (':' === (($q[1] = \ltrim($q[1]))[0] ?? 0) && false !== \strpos(" \n\t", \substr($q[1], 1, 1))) {
+                        // <https://github.com/nodeca/js-yaml/issues/189>
+                        if (false !== \strpos($q[0], "\n")) {
+                            $object = true;
+                            continue; // Broken :(
+                        }
+                        $k = k($q[0], $array, $lot);
+                        $v = \substr($q[1], 1);
+                        if ("\n" === ($v[0] ?? 0)) {
+                            $to[$k] = v(d(\substr($v, 1)), $array, $lot);
+                            continue;
+                        }
+                        // `"asdf": "asdf"`
+                        // `'asdf': 'asdf'`
+                        if ("" !== ($q = q($v = d(\substr($v, 1))))[0]) {
+                            // `"asdf": "asdf"…`
+                            // `'asdf': 'asdf'…`
+                            if ('#' === ($q[1][0] ?? 0) || "" !== \trim(c($q[1]))) {
+                                $to[$k] = null; // Broken :(
+                                continue;
+                            }
+                            $to[$k] = e($q[0], $array, $lot);
+                            continue;
+                        }
+                        // `asdf: asdf: asdf`
+                        if ("" !== $v && false === \strpos('!&[{', $v[0]) && false !== ($n = \strpos($v, ':')) && false !== \strpos(" \t", \substr($v, $n + 1, 1))) {
+                            $to[$k] = null; // Broken :(
+                            continue;
+                        }
+                        $to[$k] = v($v, $array, $lot);
+                        continue;
+                    }
+                    return null; // Broken :(
+                }
+                return e($v, $array, $lot);
+            }
+            // `- asdf…`
+            if ("-\0" === \substr($v, 0, 2)) {
+                $r = [];
+                foreach (\explode("\n-\0", \substr($v, 2)) as $vv) {
+                    // `- "asdf"`
+                    // `- 'asdf'`
+                    if ("" !== ($q = q($vv = d(\ltrim($vv, "\n"), 1)))[0]) {
+                        // `- "asdf"…`
+                        // `- 'asdf'…`
+                        if ('#' === ($q[1][0] ?? 0) || "" !== \trim(c($q[1]))) {
+                            $r[] = null; // Broken :(
+                            continue;
+                        }
+                        $r[] = e($q[0], $array, $lot);
+                        continue;
+                    }
+                    $r[] = v($vv, $array, $lot);
+                }
+                return $r;
+            }
+            // `? asdf…`
+            if ("?\0" === \substr($v, 0, 2)) {
+                if (false !== ($n = \strpos($v, "\n:")) && false !== \strpos(" \n\t", \substr($v, $n + 2, 1))) {
+                    $k = k(d(\substr($v, 2, $n - 2), 1), $array, $lot);
+                    $v = v(d(\substr($v, $n + 3), 1), $array, $lot);
+                } else if (false !== ($n = \strpos($v, ':')) && false !== \strpos(" \n\t", \substr($v, $n + 1, 1))) {
+                    $k = k(\substr($v, 2, $n - 2), $array, $lot);
+                    $v = v(\substr($v, $n + 2), $array, $lot);
+                } else {
+                    $k = k(\substr($v, 2), $array, $lot);
+                    $v = null;
+                }
+                $to[$k] = $v;
                 continue;
             }
-            [$k, $s, $v] = \array_replace(["", "", ""], \preg_split('/[ \t]*:([ \n\t]\n*|$)/', $block, 2, \PREG_SPLIT_DELIM_CAPTURE | \PREG_SPLIT_NO_EMPTY));
-            if ("" === ($v = d($v))) {
-                $out[$k] = null;
+            // `asdf:`
+            if (':' === \substr($v, -1)) {
+                if (false !== \strpos($k = \trim(\substr($v, 0, -1)), "\n")) {
+                    $object = true;
+                    continue; // Broken :(
+                }
+                $to[k($k, $array, $lot)] = null;
                 continue;
             }
-            // Fix case for invalid key-value pair(s) such as `asdf: asdf: asdf` as it should be `asdf:\n asdf: asdf`
-            if ("\n" !== \substr($s, -1) && false === \strpos('!"&\'*:>[{|', $v[0]) && (false !== \strpos($v, ":\n") || false !== \strpos($v, ":\t") || false !== \strpos($v, ': '))) {
-                $out[$k] = $v;
+            // `asdf: …`
+            if (false !== ($n = \strpos($w = \strstr($v . "\n", "\n", true) . "\n", ":\n") ?: \strpos($w, ":\t") ?: \strpos($w, ': '))) {
+                // <https://github.com/nodeca/js-yaml/issues/189>
+                if (false !== \strpos($k = \trim(\substr($v, 0, $n)), "\n")) {
+                    $object = true;
+                    continue; // Broken :(
+                }
+                $k = k($k, $array, $lot);
+                $v = \substr($v, $n + 1);
+                if ("\n" === ($v[0] ?? 0)) {
+                    $to[$k] = v(d(\substr($v, 1)), $array, $lot);
+                    continue;
+                }
+                // `asdf: "asdf"`
+                // `asdf: 'asdf'`
+                if ("" !== ($q = q($v = d(\substr($v, 1))))[0]) {
+                    // `asdf: "asdf"…`
+                    // `asdf: 'asdf'…`
+                    if ('#' === ($q[1][0] ?? 0) || "" !== \trim(c($q[1]))) {
+                        $to[$k] = null; // Broken :(
+                        continue;
+                    }
+                    $to[$k] = e($q[0], $array, $lot);
+                    continue;
+                }
+                // `asdf: asdf: asdf`
+                if ("" !== $v && false === \strpos('!&[{', $v[0]) && false !== ($n = \strpos($v, ':')) && false !== \strpos(" \t", \substr($v, $n + 1, 1))) {
+                    $to[$k] = null; // Broken :(
+                    continue;
+                }
+                $to[$k] = v($v, $array, $lot);
                 continue;
             }
-            $out[$k] = v($v, $array, $lot);
+            // <https://github.com/nodeca/js-yaml/issues/189>
+            if (false !== (\strpos($v, ":\n") ?: \strpos($v, ":\t") ?: \strpos($v, ': '))) {
+                $object = true;
+                continue; // Broken :(
+            }
+            return e(d($v), $array, $lot);
         }
-        return $array ? $out : (object) $out;
+        return $to || isset($object) ? ($array ? $to : (object) $to) : null;
     }
 }
