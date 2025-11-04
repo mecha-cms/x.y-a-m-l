@@ -11,7 +11,7 @@ namespace x\y_a_m_l {
 namespace x\y_a_m_l\from {
     function b(string $v) {
         $stack = "";
-        while ("" !== (string) $v) {
+        while ("" !== $v) {
             if ($n = \strcspn($v, '"' . "'" . '#[]{}')) {
                 $v = \substr($v, $n);
             }
@@ -280,7 +280,7 @@ namespace x\y_a_m_l\from {
     function o(string $v) {
         $b = $v[0];
         $d = $r = $stack = "";
-        while ("" !== (string) $v) {
+        while ("" !== $v) {
             if ($n = \strcspn($v, '"' . "'" . ',:[]{}')) {
                 $r .= \ltrim(\substr($v, 0, $n));
                 $v = \ltrim(\substr($v, $n));
