@@ -1,16 +1,31 @@
 <?php
 
 namespace x\y_a_m_l {
-    function to($value, $dent = true): ?string {
+    function to($value, $dent = true, $batch = false): ?string {
         if (\is_int($dent)) {
             $dent = \str_repeat(' ', $dent > 0 ? $dent : 4);
         } else if (true === $dent || !\is_string($dent)) {
             $dent = \str_repeat(' ', 4);
         }
+        if ($batch) {
+            $t = '!"&*>[{|' . "'";
+            if (!\is_array($value) || !to\l($value)) {
+                $value = to\v($value, $dent);
+                return "---" . ("" !== $value && \strspn($value, $t) ? ' ' : "\n") . $value;
+            }
+            $r = "";
+            foreach ($value as $v) {
+                $v = to\v($v, $dent);
+                $r .= "\n---" . ("" !== $v && \strspn($v, $t) ? ' ' : "\n") . $v;
+            }
+            return \substr($r, 1);
+        }
         return to\v($value, $dent);
     }
     \To::_('YAML', __NAMESPACE__ . "\\to");
     \To::_('yaml', __NAMESPACE__ . "\\to"); // Alias
+    \State::set('x.page.x.yaml.1', ['To::YAML', [2]]);
+    \State::set('x.page.x.yml.1', ['To::YAML', [2]]);
 }
 
 namespace x\y_a_m_l\to {
@@ -43,20 +58,20 @@ namespace x\y_a_m_l\to {
             // `asdf:`
             ':' === \substr($v, -1) ||
             // `asdf #asdf`
-            false !== ($n = \strpos($v, '#')) && false !== \strpos(" \n\t", \substr($v, $n - 1, 1)) ||
+            false !== ($n = \strpos($v, '#')) && \strspn($v, " \n\t", $n - 1) ||
             // `asdf: asdf`
-            false !== ($n = \strpos($v, ':')) && false !== \strpos(" \n\t", \substr($v, $n + 1, 1)) ||
+            false !== ($n = \strpos($v, ':')) && \strspn($v, " \n\t", $n + 1) ||
             // <https://yaml.org/spec/1.2.2#56-miscellaneous-characters>
             // <https://yaml.org/spec/1.2.2#example-invalid-use-of-reserved-indicators>
-            false !== \strpos('!"#%&*+,-.:>?@[]`{|}' . "'\\", $v[0]) ||
-            false !== \strpos(',false,null,true,~,', ',' . \strtolower($v) . ',') ||
-            \strlen($v) !== \strcspn($v, "<=>[\\]{|}")
+            \strspn($v, '!"#%&*+,-.:>?@[]`{|}' . "'\\") ||
+            \strcspn($v, "<=>[\\]{|}") !== \strlen($v) ||
+            false !== \strpos(',false,null,true,~,', ',' . \strtolower($v) . ',')
         ) {
             return "'" . \strtr($v, [
                 "'" => "''"
             ]) . "'";
         }
-        if (false !== \strpos("\n\t", $v[0]) || false !== \strpos("\n\t", \substr($v, -1)) || $v !== \addcslashes($v, "\\")) {
+        if (\strspn($v, "\n\t") || \strspn($v, "\n\t", -1) || $v !== \addcslashes($v, "\\")) {
             return \json_encode($v);
         }
         return $v;
@@ -68,7 +83,7 @@ namespace x\y_a_m_l\to {
         }
         return \implode("\n", $r);
     }
-    function v($value, string $dent) {
+    function v($value, string $dent, int $level = 1) {
         if (false === $value) {
             return 'false';
         }
@@ -95,13 +110,13 @@ namespace x\y_a_m_l\to {
             return $value->format('c');
         }
         if (\is_string($raw = $value)) {
+            $max = \max(60, 120 - (\strlen($dent) * $level + 1));
             if ("" !== $value && false !== \strpos($value, "\0")) {
                 $value = \base64_encode($value);
-                // `120 - strlen('!!binary ')`
-                if (\strlen($value) <= 111) {
+                if (\strlen($value) <= $max) {
                     return '!!binary ' . $value;
                 }
-                return "!!binary |\n" . $dent . \rtrim(\chunk_split($value, 120, "\n" . $dent));
+                return "!!binary |\n" . $dent . \rtrim(\chunk_split($value, $max, "\n" . $dent));
             }
             $d = 0;
             $flow = false;
@@ -123,16 +138,16 @@ namespace x\y_a_m_l\to {
             } else {
                 $d = "";
             }
-            if ('>' === $style && \strlen($value) > 120) {
+            if ('>' === $style && \strlen($value) > $max) {
                 $flow = true;
-                $value = \wordwrap($value, 120, "\n");
+                $value = \wordwrap($value, $max, "\n");
             }
             $v = "" !== $d ? \str_repeat(' ', (int) $d) : "";
             $value = $v . r(\strtr($value, [
                 "\n" => "\n" . $dent . $v
             ]));
             if ("\n" === \substr($value, -1)) {
-                if (false !== \strpos(" \n\t", \substr($value, -2, 1))) {
+                if (\strspn($value, " \n\t", -2)) {
                     return $style . '+' . $d . "\n" . $dent . $value;
                 }
                 return $style . $d . "\n" . $dent . $value;
@@ -156,8 +171,8 @@ namespace x\y_a_m_l\to {
                 } else {
                     $short = 6; // Disable flow style value!
                 }
-                $v = v($v, $dent);
-                if (false !== \strpos('>|', $v[0])) {
+                $v = v($v, $dent, $level);
+                if (\strspn($v, '>|')) {
                     $short = 6; // Disable flow style value!
                 }
                 $r[] = r(\strtr($v, [
@@ -184,7 +199,7 @@ namespace x\y_a_m_l\to {
             $r = [];
             $short = 0;
             foreach ($value as $k => $v) {
-                $k = "\0" === $k ? "? ~\n" : (\is_string($k) && false !== \strpos($k, "\n") ? '? ' . v($k, '  ') . "\n" : q((string) $k));
+                $k = "\0" === $k ? "? ~\n" : (\is_string($k) && false !== \strpos($k, "\n") ? '? ' . v($k, '  ', $level) . "\n" : q((string) $k));
                 if (\is_string($v) && ("" === $v || \strlen($v) < 41)) {
                     $short += 1;
                 } else if (\is_float($v) || \is_int($v) || \in_array($v, [-\INF, -\NAN, \INF, \NAN, false, null, true], true)) {
@@ -193,8 +208,8 @@ namespace x\y_a_m_l\to {
                     $short = 4; // Disable flow style value!
                 }
                 if (\is_iterable($v)) {
-                    $v = v($v, $dent);
-                    if (false !== \strpos('[{', $v[0])) {
+                    $v = v($v, $dent, $level + 1);
+                    if (\strspn($v, '[{')) {
                         $v = ' ' . $v;
                     } else {
                         $v = r("\n" . $dent . \strtr($v, [
@@ -204,7 +219,7 @@ namespace x\y_a_m_l\to {
                     $r[] = $k . ':' . $v;
                     continue;
                 }
-                if ('~' === ($v = v($v, $dent)) && '?' === ($k[0] ?? 0)) {
+                if ('~' === ($v = v($v, $dent, $level)) && '?' === ($k[0] ?? 0)) {
                     $r[] = \substr($k, 0, -1);
                     continue;
                 }
