@@ -24,8 +24,6 @@ namespace x\y_a_m_l {
     }
     \To::_('YAML', __NAMESPACE__ . "\\to");
     \To::_('yaml', __NAMESPACE__ . "\\to"); // Alias
-    \State::set('x.page.x.yaml.1', ['To::YAML', [2]]);
-    \State::set('x.page.x.yml.1', ['To::YAML', [2]]);
 }
 
 namespace x\y_a_m_l\to {

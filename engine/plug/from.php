@@ -64,8 +64,6 @@ namespace x\y_a_m_l {
     }
     \From::_('YAML', __NAMESPACE__ . "\\from");
     \From::_('yaml', __NAMESPACE__ . "\\from"); // Alias
-    \State::set('x.page.x.yaml.0', ['From::YAML']);
-    \State::set('x.page.x.yml.0', ['From::YAML']);
 }
 
 namespace x\y_a_m_l\from {
