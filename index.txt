@@ -7,9 +7,9 @@ icon: >-
   12.684V23.018H6.328V15.89L8.649 20.681H10.394L12.794 15.721V23.016H14.921V12.684H12.017L9.44 17.358 6.985
   12.684H4.111ZM24 20.775H18.546V12.684H16.286V22.974H24V20.775Z
 color: '#885933'
-link: 'https://github.com/taufik-nurrohman/y-a-m-l'
 author: Taufik Nurrohman
 type: Markdown
+links: [https://github.com/taufik-nurrohman/y-a-m-l]
 version: 4.0.0
 ...
 
