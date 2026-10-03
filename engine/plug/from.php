@@ -185,7 +185,7 @@ namespace x\y_a_m_l\from {
         ])) {
             return $a[$k];
         }
-        if ('"' === $v[0] && '"' === \substr($v, -1)) {
+        if ('"' === $v[0] && '"' === $v[-1]) {
             if (false !== \strpos($v, "\\'")) {
                 return null; // Broken :(
             }
@@ -207,7 +207,7 @@ namespace x\y_a_m_l\from {
             }
             return \json_decode($r);
         }
-        if ("'" === $v[0] && "'" === \substr($v, -1)) {
+        if ("'" === $v[0] && "'" === $v[-1]) {
             if (false !== \strpos($v, "\\'")) {
                 return null; // Broken :(
             }
@@ -223,7 +223,7 @@ namespace x\y_a_m_l\from {
                     $r .= "\n";
                     continue;
                 }
-                $r .= "\n" === \substr($r, -1) ? $v : ' ' . \ltrim($v);
+                $r .= "\n" === $r[-1] ? $v : ' ' . \ltrim($v);
             }
             return $r;
         }
@@ -270,7 +270,7 @@ namespace x\y_a_m_l\from {
                 $r .= "\n";
                 continue;
             }
-            $r .= "" === $r || "\n" === \substr($r, -1) ? $v : ' ' . $v;
+            $r .= "" === $r || "\n" === $r[-1] ? $v : ' ' . $v;
         }
         return $r;
     }
@@ -325,7 +325,7 @@ namespace x\y_a_m_l\from {
                     $r .= "\n" . $vv;
                     continue;
                 }
-                if ("\n" === \substr($r, -1)) {
+                if ($r && "\n" === $r[-1]) {
                     $r .= $vv;
                     continue;
                 }
@@ -348,7 +348,7 @@ namespace x\y_a_m_l\from {
             }
         }
         $r = \ltrim(\substr($r, 1), "\n");
-        return '+' === $e ? $r : ('-' === $e ? \rtrim($r) : ("\n" === \substr($r, -1) ? \rtrim($r) . "\n" : $r));
+        return '+' === $e ? $r : ('-' === $e ? \rtrim($r) : ("\n" === $r[-1] ? \rtrim($r) . "\n" : $r));
     }
     function k(string $k, $array = false, array &$lot = []) {
         if (\is_numeric($k)) {
@@ -364,15 +364,17 @@ namespace x\y_a_m_l\from {
         $b = $v[0];
         $d = $r = $stack = "";
         while ("" !== $v) {
-            if ($n = \strcspn($v, '"' . "'" . ',:[]{}')) {
-                $r .= \ltrim(\substr($v, 0, $n));
-                $v = \ltrim(\substr($v, $n));
-            }
-            if (('"' === ($c = $v[0] ?? 0) || "'" === $c) && "" !== ($q = q($v))[0]) {
+            $c = $v[0] ?? 0;
+            if (('"' === $c || "'" === $c) && "" !== ($q = q($v))[0]) {
                 $r .= $q[0];
                 $v = c(\substr($v, \strlen($q[0])));
                 continue;
             }
+            if ($n = \strcspn($v, ',:[]{}')) {
+                $r .= \ltrim(\substr($v, 0, $n));
+                $v = \ltrim(\substr($v, $n));
+            }
+            $c = $v[0] ?? 0;
             if (',' === $c) {
                 if ($c === $v) {
                     return ""; // Broken :(
@@ -383,14 +385,14 @@ namespace x\y_a_m_l\from {
                 $v = \ltrim(\substr(c($v), 1));
                 if ("" !== ($q = q($w = \trim(\strrchr($r, "\n"), " \n\t")))[0] && (':' === \substr($q[1] = \trim($q[1]), -1) || ': ' === \substr($q[1], 0, 2))) {
                     // …
-                } else if (':' === \substr($w, -1) || false !== \strpos($w, ': ')) {
+                } else if ($w && ':' === $w[-1] || false !== \strpos($w, ': ')) {
                     // …
                 } else {
                     if ("" !== $w && '-' !== $w && '- ' !== \substr($w, 0, 2)) {
                         $r .= ': ~';
                     }
                 }
-                $r .= "\n" . $d . ('[' === \substr($stack, -1) ? '- ' : "");
+                $r .= "\n" . $d . ('[' === $stack[-1] ? '- ' : "");
                 continue;
             }
             if (':' === $c) {
@@ -416,7 +418,7 @@ namespace x\y_a_m_l\from {
                 continue;
             }
             if (']' === $c) {
-                if ('[' !== \substr($stack, -1)) {
+                if (!$stack || '[' !== $stack[-1]) {
                     return ""; // Broken :(
                 }
                 $stack = \substr($stack, 0, -1);
@@ -427,7 +429,7 @@ namespace x\y_a_m_l\from {
                 $d = \substr($d, 0, -1);
                 if ("" !== ($q = q($w = \trim(\strrchr($r = \rtrim($r, "\n"), "\n"))))[0] && (':' === \substr($q[1] = \trim($q[1]), -1) || ': ' === \substr($q[1], 0, 2))) {
                     // …
-                } else if (':' === \substr($w, -1) || false !== \strpos($w, ': ')) {
+                } else if ($w && ':' === $w[-1] || false !== \strpos($w, ': ')) {
                     // …
                 } else {
                     if ("" !== $w && '-' !== $w && '- ' !== \substr($w, 0, 2)) {
@@ -453,7 +455,7 @@ namespace x\y_a_m_l\from {
                 continue;
             }
             if ('}' === $c) {
-                if ('{' !== \substr($stack, -1)) {
+                if (!$stack || '{' !== $stack[-1]) {
                     return ""; // Broken :(
                 }
                 $stack = \substr($stack, 0, -1);
@@ -464,7 +466,7 @@ namespace x\y_a_m_l\from {
                 $d = \substr($d, 0, -1);
                 if ("" !== ($q = q($w = \trim(\strrchr($r = \rtrim($r, "\n"), "\n"))))[0] && (':' === \substr($q[1] = \trim($q[1]), -1) || ': ' === \substr($q[1], 0, 2))) {
                     // …
-                } else if (':' === \substr($w, -1) || false !== \strpos($w, ': ')) {
+                } else if ($w && ':' === $w[-1] || false !== \strpos($w, ': ')) {
                     // …
                 } else {
                     if ("" !== $w && '-' !== $w && '- ' !== \substr($w, 0, 2)) {
