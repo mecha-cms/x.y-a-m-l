@@ -5,11 +5,12 @@ namespace x\y_a_m_l {
         if (!\is_array($state)) {
             $state = ['array' => !!$state];
         }
+        $s = (array) \State::get('x.y-a-m-l.from', true);
         $state = \array_replace([
             'array' => false,
             'lot' => [],
             'with' => []
-        ], $state);
+        ], $s, $state);
         $array = !empty($state['array']);
         $value = \strtr(\trim($value ?? "", "\n"), [
             "\r\n" => "\n",

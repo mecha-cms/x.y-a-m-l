@@ -5,11 +5,12 @@ namespace x\y_a_m_l {
         if (!\is_array($state)) {
             $state = ['tab' => \is_int($state) ? $state : !!$state];
         }
+        $s = (array) \State::get('x.y-a-m-l.to', true);
         $state = \array_replace([
             'batch' => false,
             'tab' => 4,
             'with' => []
-        ], $state);
+        ], $s, $state);
         $batch = !empty($state['batch']);
         $tab = $state['tab'] ?? 4;
         if (\is_int($tab)) {
